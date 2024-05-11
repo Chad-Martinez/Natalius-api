@@ -8,7 +8,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   try {
     const isExistingUser = await User.findOne({ email: email });
 
-    if (isExistingUser) throw new HttpErrorResponse(409, 'Email already exists');
+    if (isExistingUser) throw new HttpErrorResponse(409, 'Email already exists. If you forgot your password, try resetting it');
 
     const hashedPw = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
 
