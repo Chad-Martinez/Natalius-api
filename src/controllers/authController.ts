@@ -1,4 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import path from 'path';
+import { readFileSync } from 'fs';
+import { Transporter, createTransport } from 'nodemailer';
+import jwt, { JsonWebTokenError, JwtPayload } from 'jsonwebtoken';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
@@ -21,7 +25,46 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     const createdUser = await user.save();
 
-    res.status(201).json({ id: createdUser._id, message: 'Account created' });
+    const transporter: Transporter = createTransport({
+      service: 'iCloud',
+      auth: {
+        user: process.env.ICLOUD_USER,
+        pass: process.env.ICLOUD_PW,
+      },
+    });
+
+    // const __dirname: string = path.resolve();
+    // const filePath: string = path.join(__dirname, './src/templates/verify-email.handlebars');
+    // const emailSource: string = readFileSync(filePath, 'utf-8').toString();
+
+    // const token: string = jwt.sign(
+    //   {
+    //     email: email,
+    //   },
+    //   process.env.JWT_SECRET!,
+    // );
+
+    // const template: HandlebarsTemplateDelegate<any> = Handlebars.compile(emailSource);
+
+    // const replacements: { name: string; link: string; website: string } = {
+    //   name: firstName,
+    //   link: `${process.env.REGISTER_LINK}${token}`,
+    //   website: process.env.WEBSITE!,
+    // };
+
+    // const htmlToSend = template(replacements);
+
+    const result = await transporter.sendMail({
+      to: email,
+      from: process.env.SENDER_EMAIL,
+      subject: 'Please verify your email address',
+      text: 'Test email',
+      //   html: htmlToSend,
+    });
+
+    console.log('EMAIL RESULT ', result);
+
+    res.status(201).json({ id: createdUser._id, message: 'Account created. Please verify your email address' });
   } catch (error) {
     console.error('Auth Controller Error - Register: ', error);
     if (error instanceof HttpErrorResponse) {
