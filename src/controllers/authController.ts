@@ -1,28 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { Transporter, createTransport } from 'nodemailer';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import hbs, { NodemailerExpressHandlebarsOptions } from 'nodemailer-express-handlebars';
+import { IVerifyEmailToken } from 'src/interfaces/VerifyEmailToken.interface';
+import { IUser } from 'src/interfaces/User.interface';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 
-export const register = async (req: Request, res: Response, next: NextFunction) => {
+export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { firstName, lastName, email, password } = req.body;
   try {
-    const isExistingUser = await User.findOne({ email: email });
+    const isExistingUser: IUser | null = await User.findOne({ email: email });
 
     if (isExistingUser) throw new HttpErrorResponse(409, 'Email already exists. If you forgot your password, try resetting it');
 
-    const hashedPw = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
+    const hashedPw: string = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
 
-    const user = new User({
+    const user = new User<IUser>({
       firstName,
       lastName,
       email,
       hashedPw,
     });
 
-    const createdUser = await user.save();
+    const createdUser: IUser = await user.save();
 
     const transporter: Transporter = createTransport({
       service: 'iCloud',
@@ -65,7 +67,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     await transporter.sendMail(mail);
 
-    res.status(201).json({ id: createdUser._id, message: 'Account created. Please verify your email address' });
+    res.status(201).json({ id: createdUser._id, message: 'Account created. Please verify your email address to activate your account' });
   } catch (error) {
     console.error('Auth Controller Error - Register: ', error);
     if (error instanceof HttpErrorResponse) {
@@ -79,16 +81,18 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
-
+export const login: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const { email, password } = req.body;
     if (!email || !password) throw new HttpErrorResponse(409, 'Email and password required');
-    const user = await User.findOne({ email: email });
+
+    const user: IUser | null = await User.findOne({ email: email });
     if (!user) throw new HttpErrorResponse(404, 'Email or password is incorrect');
 
-    const isMatch = await bcrypt.compare(password, user.hashedPw);
+    const isMatch: boolean = await bcrypt.compare(password, user.hashedPw);
     if (!isMatch) throw new HttpErrorResponse(401, 'Email or password is incorrect');
+
+    if (!user.isEmailVerified) throw new HttpErrorResponse(401, 'Please verify your email address to activate your account.');
 
     res.status(200).json({ id: user._id });
   } catch (error) {
@@ -104,7 +108,27 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+const verifyEmail: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token } = req.params;
+    const decodedToken: string | JwtPayload = jwt.verify(token, process.env.JWT_SECRET!);
+    const { email } = decodedToken as IVerifyEmailToken;
+    const user: IUser | null = await User.findOne({ email: email });
+
+    if (!user) throw new HttpErrorResponse(404, 'A user with that email could not be found');
+
+    user.isEmailVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified' });
+  } catch (error) {
+    console.error('Auth Controller Error - Verify Email: ', error);
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
+  verifyEmail,
 };
