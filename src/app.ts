@@ -3,6 +3,7 @@ import HttpErrorResponse from './classes/HttpErrorResponse';
 import dbConnect from './db/conn';
 import authRoutes from './routes/authRoutes';
 import gigRoutes from './routes/gigRoutes';
+import shiftRoutes from './routes/shiftRoutes';
 
 dbConnect();
 
@@ -16,6 +17,7 @@ app.get('/', (req: Request, res: Response) => res.send('Ooooh Yea!'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
+app.use('/api/shifts', shiftRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
