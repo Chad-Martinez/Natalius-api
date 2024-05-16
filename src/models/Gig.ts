@@ -1,4 +1,4 @@
-import { Schema, SchemaTypes } from 'mongoose';
+import { Schema, SchemaTypes, model } from 'mongoose';
 
 const gigSchema = new Schema(
   {
@@ -15,28 +15,16 @@ const gigSchema = new Schema(
     contact: {
       name: String,
       phone: {
-        type: Number,
-        min: [10, 'Phone number must be at least 10 digits'],
-        max: [10, 'Phone number cannot be greater than 10 digits'],
+        type: String,
+        validate: {
+          validator: (v: string) => {
+            return /\d{3}-\d{3}-\d{4}/.test(v);
+          },
+          message: 'Supplied phone number is not a valid phone number',
+        },
       },
     },
-    shifts: [
-      {
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-        startTime: {
-          type: Date,
-          required: [true, 'Start time required'],
-        },
-        endTime: {
-          type: Date,
-          required: [true, 'End time required'],
-        },
-        notes: String,
-      },
-    ],
+    shifts: [{ type: SchemaTypes.ObjectId, ref: 'Shift' }],
     distance: Number,
     userId: { type: SchemaTypes.ObjectId, required: true },
   },
@@ -45,4 +33,4 @@ const gigSchema = new Schema(
 
 gigSchema.index({ userId: 1 });
 
-export default gigSchema;
+export default model('Gig', gigSchema);
