@@ -1,6 +1,7 @@
-import { Schema, SchemaTypes, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IGig } from 'src/interfaces/Gig.interface';
 
-const gigSchema = new Schema(
+const gigSchema = new Schema<IGig>(
   {
     name: {
       type: String,
@@ -24,13 +25,13 @@ const gigSchema = new Schema(
         },
       },
     },
-    shifts: [{ type: SchemaTypes.ObjectId, ref: 'Shift' }],
+    shifts: [{ type: Schema.Types.ObjectId, ref: 'Shift' }],
     distance: Number,
-    userId: { type: SchemaTypes.ObjectId, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
 gigSchema.index({ userId: 1 });
 
-export default model('Gig', gigSchema);
+export default model<IGig>('Gig', gigSchema);

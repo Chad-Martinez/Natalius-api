@@ -1,10 +1,17 @@
-import { Schema, SchemaTypes, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IIncome } from 'src/interfaces/Income.interface';
 
-const incomeSchema = new Schema(
+const incomeSchema = new Schema<IIncome>(
   {
     gigId: {
-      type: SchemaTypes.ObjectId,
+      type: Schema.Types.ObjectId,
       required: [true, 'Gig is required'],
+      ref: 'Gig',
+    },
+    shiftId: {
+      type: Schema.Types.ObjectId,
+      required: [true, 'Shift is required'],
+      ref: 'Shift',
     },
     date: {
       type: Date,
@@ -17,14 +24,14 @@ const incomeSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ['Cash', 'Check', 'Credit'],
+      enum: ['CASH', 'CHECK', 'CREDIT'],
       required: [true, 'Payment Type is required'],
     },
-    userId: { type: SchemaTypes.ObjectId, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-incomeSchema.index({ userId: 1 });
+incomeSchema.index({ userId: 1, date: 1 });
 
-export default model('Income', incomeSchema);
+export default model<IIncome>('Income', incomeSchema);

@@ -1,13 +1,13 @@
-import { Schema, model, SchemaTypes } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
 const accountSchema = new Schema({
   userId: {
-    type: SchemaTypes.ObjectId,
+    type: Schema.Types.ObjectId,
     required: true,
   },
-  gigs: [{ type: SchemaTypes.ObjectId, default: [] }],
-  income: [{ type: SchemaTypes.ObjectId, default: [] }],
-  expenses: [{ type: SchemaTypes.ObjectId, default: [] }],
+  gigs: [{ type: Schema.Types.ObjectId, default: [] }],
+  income: [{ type: Schema.Types.ObjectId, default: [] }],
+  expenses: [{ type: Schema.Types.ObjectId, default: [] }],
 });
 
 accountSchema.index({ userId: 1 });

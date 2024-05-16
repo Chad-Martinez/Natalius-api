@@ -1,9 +1,10 @@
-import { Schema, model, SchemaTypes } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IShift } from 'src/interfaces/Shift.interface';
 
-const shiftSchema = new Schema(
+const shiftSchema = new Schema<IShift>(
   {
     gigId: {
-      type: SchemaTypes.ObjectId,
+      type: Schema.Types.ObjectId,
       required: true,
     },
     startDate: {
@@ -30,6 +31,6 @@ const shiftSchema = new Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-shiftSchema.index({ gigId: 1 });
+shiftSchema.index({ gigId: 1, stateDate: 1, startTime: 1 });
 
-export default model('Shift', shiftSchema);
+export default model<IShift>('Shift', shiftSchema);

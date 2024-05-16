@@ -1,13 +1,10 @@
-import { Document, ObjectId } from 'mongodb';
+import { Types } from 'mongoose';
 
-export interface IShift extends Document {
-  _id?: ObjectId;
+export interface IShift {
   startDate: Date;
   startTime: Date;
   endDate: Date;
   endTime: Date;
   notes: String;
-  gigId: ObjectId;
-  created_at?: Date;
-  updated_at?: Date;
+  gigId: Types.ObjectId;
 }

@@ -1,9 +1,9 @@
-import { Schema, SchemaTypes, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
 const expenseSchema = new Schema(
   {
     vendorId: {
-      type: SchemaTypes.ObjectId,
+      type: Schema.Types.ObjectId,
       required: [true, 'Vendor is Required'],
     },
     date: {
@@ -19,11 +19,11 @@ const expenseSchema = new Schema(
       type: String,
       required: [true, 'Expense type is required'],
     },
-    userId: { type: SchemaTypes.ObjectId, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-expenseSchema.index({ userId: 1 });
+expenseSchema.index({ userId: 1, date: 1 });
 
 export default model('Expense', expenseSchema);
