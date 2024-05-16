@@ -1,4 +1,5 @@
 import { Document, ObjectId } from 'mongodb';
+import { IShift } from './Shift.interface';
 
 export interface IGig extends Document {
   _id?: ObjectId;
@@ -13,7 +14,7 @@ export interface IGig extends Document {
     name: String;
     phone: Number;
   };
-  shifts: [ObjectId];
+  shifts: (ObjectId | IShift)[] | null;
   distance: Number;
   userId: ObjectId;
   created_at?: Date;
