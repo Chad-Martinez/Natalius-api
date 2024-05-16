@@ -7,6 +7,7 @@ import { IVerifyEmailToken } from 'src/interfaces/VerifyEmailToken.interface';
 import { IUser } from 'src/interfaces/User.interface';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
+import Account from '../models/Account';
 
 export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { firstName, lastName, email, password } = req.body;
@@ -24,7 +25,13 @@ export const register: RequestHandler = async (req: Request, res: Response, next
       hashedPw,
     });
 
-    const createdUser: IUser = await user.save();
+    const createdUser = await user.save();
+
+    const account = new Account({
+      userId: createdUser._id,
+    });
+
+    await account.save();
 
     const transporter: Transporter = createTransport({
       service: 'iCloud',
