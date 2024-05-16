@@ -2,12 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
+import Shift from '../models/Shift';
 
 export const getAllGigsByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.params;
 
-    const gigs: Array<IGig> = await Gig.find({ userId: userId });
+    const gigs: IGig[] | unknown = await Gig.find({ userId: userId }).populate('shifts').exec();
 
     res.status(200).json(gigs);
   } catch (error) {
@@ -20,7 +21,7 @@ export const getGigById = async (req: Request, res: Response, next: NextFunction
   try {
     const { gigId } = req.params;
 
-    const gig: IGig | null = await Gig.findById(gigId);
+    const gig: IGig | unknown | null = await Gig.findById(gigId).populate('shifts').exec();
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -59,7 +60,7 @@ export const addGig = async (req: Request, res: Response, next: NextFunction): P
 
 export const updateGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, name, address, contact, shifts, distance, userId } = req.body;
+    const { gigId, name, address, contact, distance, userId } = req.body;
 
     const gig: IGig | null = await Gig.findById(gigId);
 
@@ -68,7 +69,6 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
     gig.name = name;
     gig.address = address;
     gig.contact = contact;
-    gig.shifts = shifts;
     gig.distance = distance;
     gig.userId = userId;
 
@@ -90,9 +90,13 @@ export const deleteGig = async (req: Request, res: Response, next: NextFunction)
   try {
     const { gigId } = req.params;
 
+    const gig = await Gig.findById(gigId);
+
+    await Shift.deleteMany({ gigId: gig?.shifts });
+
     await Gig.deleteOne({ _id: gigId });
 
-    res.status(200).json({ message: 'Ok!' });
+    res.status(200).json({ message: 'Gig and all associated shift information has been deleted.' });
   } catch (error) {
     console.error('Gig Controller Error - DeleteGig: ', error);
     if (error instanceof HttpErrorResponse) {
