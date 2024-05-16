@@ -6,10 +6,11 @@ const vendorSchema = new Schema(
       type: String,
       required: [true, 'Vendor name is required'],
     },
+    userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-vendorSchema.index({ name: 1 });
+vendorSchema.index({ userId: 1, name: 1 });
 
 export default model('Vendor', vendorSchema);
