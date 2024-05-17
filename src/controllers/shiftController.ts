@@ -4,12 +4,13 @@ import Shift from '../models/Shift';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Gig from '../models/Gig';
 import { IGig } from 'src/interfaces/Gig.interface';
+import { HydratedDocument } from 'mongoose';
 
 export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId } = req.params;
 
-    const shifts: IShift[] = await Shift.find({ gigId: gigId }).sort({ startDate: 1 });
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId }).sort({ startDate: 1 });
 
     res.status(200).json(shifts);
   } catch (error) {
@@ -22,7 +23,7 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
   try {
     const { shiftId } = req.params;
 
-    const shift: IShift | null = await Shift.findById(shiftId);
+    const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -37,11 +38,11 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
   try {
     const { gigId, startDate, startTime, endDate, endTime, notes } = req.body;
 
-    const gig: IGig | null = await Gig.findById(gigId);
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    const shift: IShift = new Shift({
+    const shift = new Shift({
       gigId,
       startDate,
       startTime,
@@ -50,7 +51,7 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
       notes,
     });
 
-    const savedShift = await shift.save();
+    const savedShift: HydratedDocument<IShift> = await shift.save();
 
     if (!gig.shifts) {
       gig.shifts = [];
@@ -74,7 +75,7 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
   try {
     const { shiftId, gigId, startDate, startTime, endDate, endTime, notes } = req.body;
 
-    const shift: IShift | null = await Shift.findById(shiftId);
+    const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
@@ -103,7 +104,7 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
   try {
     const { shiftId, gigId } = req.body;
 
-    const gig: IGig | null = await Gig.findById(gigId);
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
     const filteredGigs = gig.shifts?.filter((id) => id.toString() !== shiftId);
