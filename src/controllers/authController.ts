@@ -8,24 +8,25 @@ import { IUser } from 'src/interfaces/User.interface';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import Account from '../models/Account';
+import { HydratedDocument } from 'mongoose';
 
 export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { firstName, lastName, email, password } = req.body;
   try {
-    const isExistingUser: IUser | null = await User.findOne({ email: email });
+    const isExistingUser: HydratedDocument<IUser> | null = await User.findOne({ email: email });
 
     if (isExistingUser) throw new HttpErrorResponse(409, 'Email already exists. If you forgot your password, try resetting it');
 
     const hashedPw: string = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
 
-    const user = new User<IUser>({
+    const user = new User({
       firstName,
       lastName,
       email,
       hashedPw,
     });
 
-    const createdUser = await user.save();
+    const createdUser: HydratedDocument<IUser> = await user.save();
 
     const account = new Account({
       userId: createdUser._id,
@@ -93,7 +94,7 @@ export const login: RequestHandler = async (req: Request, res: Response, next: N
     const { email, password } = req.body;
     if (!email || !password) throw new HttpErrorResponse(409, 'Email and password required');
 
-    const user: IUser | null = await User.findOne({ email: email });
+    const user: HydratedDocument<IUser> | null = await User.findOne({ email: email });
     if (!user) throw new HttpErrorResponse(404, 'Email or password is incorrect');
 
     const isMatch: boolean = await bcrypt.compare(password, user.hashedPw);
@@ -120,7 +121,7 @@ const verifyEmail: RequestHandler = async (req: Request, res: Response, next: Ne
     const { token } = req.params;
     const decodedToken: string | JwtPayload = jwt.verify(token, process.env.JWT_SECRET!);
     const { email } = decodedToken as IVerifyEmailToken;
-    const user: IUser | null = await User.findOne({ email: email });
+    const user: HydratedDocument<IUser> | null = await User.findOne({ email: email });
 
     if (!user) throw new HttpErrorResponse(404, 'A user with that email could not be found');
 

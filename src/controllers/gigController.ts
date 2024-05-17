@@ -3,12 +3,13 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
 import Shift from '../models/Shift';
+import { HydratedDocument } from 'mongoose';
 
 export const getAllGigsByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.params;
 
-    const gigs: IGig[] | unknown = await Gig.find({ userId: userId }).populate('shifts').exec();
+    const gigs: HydratedDocument<IGig>[] = await Gig.find({ userId: userId }).populate('shifts').exec();
 
     res.status(200).json(gigs);
   } catch (error) {
@@ -21,7 +22,7 @@ export const getGigById = async (req: Request, res: Response, next: NextFunction
   try {
     const { gigId } = req.params;
 
-    const gig: IGig | unknown | null = await Gig.findById(gigId).populate('shifts').exec();
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId).populate('shifts').exec();
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -62,7 +63,7 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
   try {
     const { gigId, name, address, contact, distance, userId } = req.body;
 
-    const gig: IGig | null = await Gig.findById(gigId);
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -90,7 +91,7 @@ export const deleteGig = async (req: Request, res: Response, next: NextFunction)
   try {
     const { gigId } = req.params;
 
-    const gig = await Gig.findById(gigId);
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
     await Shift.deleteMany({ gigId: gig?.shifts });
 
