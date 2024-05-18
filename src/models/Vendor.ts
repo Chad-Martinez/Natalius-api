@@ -6,6 +6,11 @@ const vendorSchema = new Schema(
       type: String,
       required: [true, 'Vendor name is required'],
     },
+    defaultType: {
+      type: String,
+      enum: ['SERVICE', 'EQUIPMENT', 'MISC', 'NONE'],
+      default: 'NONE',
+    },
     userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
