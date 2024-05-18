@@ -6,6 +6,7 @@ import gigRoutes from './routes/gigRoutes';
 import shiftRoutes from './routes/shiftRoutes';
 import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
+import expenseRoutes from './routes/expenseRoutes';
 
 dbConnect();
 
@@ -21,14 +22,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);
-app.use('/api/vendor', vendorRouters);
+app.use('/api/vendors', vendorRouters);
+app.use('/api/expenses', expenseRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
+  console.error('Express Error Middleware: ', error);
   if (error instanceof HttpErrorResponse) {
     res.status(error.status).json({ message: error.message });
   }
-  console.error('Express Error Middleware: ', error);
   res.status(500).json({ message: 'Internal Server Error', error });
 });
 

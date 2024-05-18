@@ -1,10 +1,12 @@
 import { Schema, model } from 'mongoose';
+import { IExpense } from '../interfaces/Expense.interface';
 
-const expenseSchema = new Schema(
+const expenseSchema = new Schema<IExpense>(
   {
     vendorId: {
       type: Schema.Types.ObjectId,
       required: [true, 'Vendor is Required'],
+      ref: 'Vendor',
     },
     date: {
       type: Date,
@@ -17,7 +19,13 @@ const expenseSchema = new Schema(
     },
     type: {
       type: String,
+      enum: ['SERVICE', 'EQUIPMENT', 'MISC'],
       required: [true, 'Expense type is required'],
+      uppercase: true,
+    },
+    distance: {
+      type: Number,
+      min: [1, 'Distance must be a minimum of one mile'],
     },
     userId: { type: Schema.Types.ObjectId, required: true },
   },
@@ -26,4 +34,4 @@ const expenseSchema = new Schema(
 
 expenseSchema.index({ userId: 1, date: 1 });
 
-export default model('Expense', expenseSchema);
+export default model<IExpense>('Expense', expenseSchema);
