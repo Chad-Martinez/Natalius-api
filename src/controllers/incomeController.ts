@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Request, Response, NextFunction } from 'express';
-import { HydratedDocument, PipelineStage } from 'mongoose';
+import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IIncome } from '../interfaces/Income.interface';
 import Income from '../models/Income';
@@ -9,7 +9,7 @@ export const getAllIncomeByUser = async (req: Request, res: Response, next: Next
   try {
     const { userId } = req.params;
 
-    if (userId === ':userId') throw new HttpErrorResponse(500, 'Missing required paramater');
+    if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const income: HydratedDocument<IIncome>[] = await Income.find({ userId: userId }, { __v: 0 })
       .sort({
@@ -37,9 +37,10 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
     const { page, limit } = req.query;
     const { id } = req.params;
 
-    console.log(page, limit, id);
-    if (!page || !limit || id === ':id') {
-      throw new HttpErrorResponse(500, 'Missing proper query parameters');
+    if (!isValidObjectId(id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
+    if (!page || !limit) {
+      throw new HttpErrorResponse(400, 'Missing proper query parameters');
     }
 
     const pipline: PipelineStage[] = [
@@ -84,6 +85,8 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
 export const getIncomeById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { incomeId } = req.params;
+
+    if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const income: HydratedDocument<IIncome> | null = await Income.findById(incomeId)
       .populate({
@@ -135,6 +138,8 @@ export const updateIncome = async (req: Request, res: Response, next: NextFuncti
   try {
     const { incomeId, gigId, shiftId, date, amount, type, userId } = req.body;
 
+    if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
     const income: HydratedDocument<IIncome> | null = await Income.findById(incomeId);
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
@@ -163,6 +168,9 @@ export const updateIncome = async (req: Request, res: Response, next: NextFuncti
 export const deleteIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { incomeId } = req.params;
+
+    if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
     await Income.deleteOne({ _id: incomeId });
 
     res.status(200).json({ message: 'Income deleted' });

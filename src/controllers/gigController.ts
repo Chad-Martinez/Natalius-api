@@ -3,11 +3,13 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
 import Shift from '../models/Shift';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, isValidObjectId } from 'mongoose';
 
 export const getAllGigsByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.params;
+
+    if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const gigs: HydratedDocument<IGig>[] = await Gig.find({ userId: userId }).populate('shifts').exec();
 
@@ -21,6 +23,8 @@ export const getAllGigsByUser = async (req: Request, res: Response, next: NextFu
 export const getGigById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId } = req.params;
+
+    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId).populate('shifts').exec();
 
@@ -63,6 +67,8 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
   try {
     const { gigId, name, address, contact, distance, userId } = req.body;
 
+    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
@@ -87,9 +93,12 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+// WILL NEED TO IMPLEMENT LOGIC DUE TO GIG - SHIFT - INCOME RELATIONSHIPS
 export const deleteGig = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { gigId } = req.params;
+
+    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
