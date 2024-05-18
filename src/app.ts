@@ -7,6 +7,7 @@ import shiftRoutes from './routes/shiftRoutes';
 import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
 import expenseRoutes from './routes/expenseRoutes';
+import { connection } from 'mongoose';
 
 dbConnect();
 
@@ -34,4 +35,7 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction): void =>
   res.status(500).json({ message: 'Internal Server Error', error });
 });
 
-app.listen(port, () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
+connection.once('open', () => {
+  console.log('Connected to MongoDB');
+  app.listen(port, () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
+});
