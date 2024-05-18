@@ -4,11 +4,13 @@ import Shift from '../models/Shift';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Gig from '../models/Gig';
 import { IGig } from 'src/interfaces/Gig.interface';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, isValidObjectId } from 'mongoose';
 
 export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId } = req.params;
+
+    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId }).sort({ startDate: 1 });
 
@@ -22,6 +24,8 @@ export const getAllShiftsByGig = async (req: Request, res: Response, next: NextF
 export const getShiftById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { shiftId } = req.params;
+
+    if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
 
@@ -75,6 +79,8 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
   try {
     const { shiftId, gigId, startDate, startTime, endDate, endTime, notes } = req.body;
 
+    if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
     const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
@@ -103,6 +109,10 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 export const deleteShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { shiftId, gigId } = req.body;
+
+    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided Gig id is not valid');
+
+    if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided Shift id is not valid');
 
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
