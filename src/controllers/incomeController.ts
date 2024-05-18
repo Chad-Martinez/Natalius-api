@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 import { Request, Response, NextFunction } from 'express';
 import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
-import { IIncome } from '../interfaces/Income.interface';
+import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 import Income from '../models/Income';
 
 export const getAllIncomeByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -11,7 +11,7 @@ export const getAllIncomeByUser = async (req: Request, res: Response, next: Next
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const income: HydratedDocument<IIncome>[] = await Income.find({ userId: userId }, { __v: 0 })
+    const income: HydratedDocument<IIncome | IIncomePopulated>[] = await Income.find({ userId: userId }, { __v: 0 })
       .sort({
         date: 1,
       })
@@ -19,13 +19,27 @@ export const getAllIncomeByUser = async (req: Request, res: Response, next: Next
         path: 'gigId',
         select: { name: 1 },
       })
-      .populate({
-        path: 'shiftId',
-        select: { _id: 1 },
-      })
       .exec();
 
-    res.status(200).json(income);
+    const mappedIncome = income.map((income: HydratedDocument<IIncome | IIncomePopulated>) => {
+      const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income as HydratedDocument<IIncomePopulated>;
+      return {
+        _id,
+        gig: {
+          _id: gigId?._id,
+          name: gigId?.name,
+        },
+        shiftId,
+        date,
+        amount,
+        type,
+        userId,
+        created_at,
+        updated_at,
+      };
+    });
+
+    res.status(200).json(mappedIncome);
   } catch (error) {
     console.error('Income Controller Error - IncomeByUser: ', error);
     next(error);
@@ -58,7 +72,11 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
     const count: number = incomeCount.length > 0 ? incomeCount[0].count : 0;
 
     if (count) {
-      const income: HydratedDocument<IIncome>[] = await Income.find({ userId: id }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
+      const income: HydratedDocument<IIncome | IIncomePopulated>[] = await Income.find(
+        { userId: id },
+        { __v: 0 },
+        { skip: (+page - 1) * +limit, limit: +limit },
+      )
         .sort({
           date: 1,
         })
@@ -66,13 +84,27 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
           path: 'gigId',
           select: { name: 1 },
         })
-        .populate({
-          path: 'shiftId',
-          select: { _id: 1 },
-        })
         .exec();
 
-      res.status(200).json({ income, count });
+      const mappedIncome = income.map((income: HydratedDocument<IIncome | IIncomePopulated>) => {
+        const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income as HydratedDocument<IIncomePopulated>;
+        return {
+          _id,
+          gig: {
+            _id: gigId?._id,
+            name: gigId?.name,
+          },
+          shiftId,
+          date,
+          amount,
+          type,
+          userId,
+          created_at,
+          updated_at,
+        };
+      });
+
+      res.status(200).json({ mappedIncome, count });
     } else {
       res.status(200).json({ income: [], count });
     }
@@ -88,20 +120,33 @@ export const getIncomeById = async (req: Request, res: Response, next: NextFunct
 
     if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const income: HydratedDocument<IIncome> | null = await Income.findById(incomeId)
+    const income: HydratedDocument<IIncome | IIncomePopulated> | null = (await Income.findById(incomeId)
       .populate({
         path: 'gigId',
         select: { name: 1 },
       })
-      .populate({
-        path: 'shiftId',
-        select: { _id: 1 },
-      })
-      .exec();
+      .exec()) as HydratedDocument<IIncomePopulated>;
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    res.status(200).json({ message: 'Ok!' });
+    const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
+
+    const mappedIncome = {
+      _id,
+      gig: {
+        _id: gigId?._id,
+        name: gigId?.name,
+      },
+      shiftId,
+      date,
+      amount,
+      type,
+      userId,
+      created_at,
+      updated_at,
+    };
+
+    res.status(200).json(mappedIncome);
   } catch (error) {
     console.error('Income Controller Error - IncomeById: ', error);
     next(error);

@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { IIncome } from 'src/interfaces/Income.interface';
+import { IIncome, IIncomePopulated } from 'src/interfaces/Income.interface';
 
-const incomeSchema = new Schema<IIncome>(
+const incomeSchema = new Schema<IIncome | IIncomePopulated>(
   {
     gigId: {
       type: Schema.Types.ObjectId,
@@ -34,4 +34,4 @@ const incomeSchema = new Schema<IIncome>(
 
 incomeSchema.index({ userId: 1, date: 1 });
 
-export default model<IIncome>('Income', incomeSchema);
+export default model<IIncome | IIncomePopulated>('Income', incomeSchema);
