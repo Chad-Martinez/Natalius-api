@@ -6,6 +6,7 @@ const shiftSchema = new Schema<IShift>(
     gigId: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: 'Gig',
     },
     startDate: {
       type: Date,

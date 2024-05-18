@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
+import { IVendor } from 'src/interfaces/Vendor.interface';
 
-const vendorSchema = new Schema(
+const vendorSchema = new Schema<IVendor>(
   {
     name: {
       type: String,
@@ -8,8 +9,7 @@ const vendorSchema = new Schema(
     },
     defaultType: {
       type: String,
-      enum: ['SERVICE', 'EQUIPMENT', 'MISC', 'NONE'],
-      default: 'NONE',
+      enum: ['SERVICE', 'EQUIPMENT', 'MISC'],
     },
     userId: { type: Schema.Types.ObjectId, required: true },
   },
@@ -18,4 +18,4 @@ const vendorSchema = new Schema(
 
 vendorSchema.index({ userId: 1, name: 1 });
 
-export default model('Vendor', vendorSchema);
+export default model<IVendor>('Vendor', vendorSchema);
