@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { addGig, deleteGig, getAllGigsByUser, getGigById, updateGig } from '../controllers/gigController';
+import { addGig, deleteGig, getGigsByUser, getGigById, updateGig } from '../controllers/gigController';
 
 const router = Router();
 
-router.get('/user/:userId', getAllGigsByUser);
+router.get('/', getGigsByUser);
 
 router.get('/:gigId', getGigById);
 

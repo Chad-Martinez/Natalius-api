@@ -3,7 +3,7 @@ import { addVendor, getVendorsByUser, getVendorById, updateVendor } from '../con
 
 const router = Router();
 
-router.get('/user/:userId', getVendorsByUser);
+router.get('/', getVendorsByUser);
 
 router.get('/:vendorId', getVendorById);
 

@@ -4,10 +4,11 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Expense from '../models/Expense';
 import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
 import { IExpense } from 'src/interfaces/Expense.interface';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 
-export const getExpensesByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getExpensesByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -25,12 +26,13 @@ export const getExpensesByUser = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const getPaginatedExpenses = async (req: Request, res: Response, next: NextFunction) => {
+export const getPaginatedExpenses = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const { page, limit } = req.query;
-    const { id } = req.params;
 
-    if (!isValidObjectId(id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    const { userId } = req;
+
+    if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     if (!page || !limit) {
       throw new HttpErrorResponse(400, 'Missing proper query parameters');
@@ -39,7 +41,7 @@ export const getPaginatedExpenses = async (req: Request, res: Response, next: Ne
     const pipline: PipelineStage[] = [
       {
         $match: {
-          userId: new ObjectId(id),
+          userId: new ObjectId(userId),
         },
       },
       {
@@ -51,7 +53,7 @@ export const getPaginatedExpenses = async (req: Request, res: Response, next: Ne
     const count: number = incomeCount.length > 0 ? incomeCount[0].count : 0;
 
     if (count) {
-      const income: HydratedDocument<IExpense>[] = await Expense.find({ userId: id }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
+      const income: HydratedDocument<IExpense>[] = await Expense.find({ userId }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
         .sort({
           date: 1,
         })
@@ -91,9 +93,11 @@ export const getExpenseById = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const addExpense = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addExpense = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, date, amount, type, distance, userId } = req.body;
+    const { vendorId, date, amount, type, distance } = req.body;
+
+    const { userId } = req;
 
     const expense = new Expense({
       vendorId,
@@ -120,7 +124,7 @@ export const addExpense = async (req: Request, res: Response, next: NextFunction
 
 export const updateExpense = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, vendorId, date, amount, type, distance, userId } = req.body;
+    const { _id, vendorId, date, amount, type, distance } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -133,7 +137,6 @@ export const updateExpense = async (req: Request, res: Response, next: NextFunct
     expense.amount = amount;
     expense.type = type;
     expense.distance = distance;
-    expense.userId = userId;
 
     await expense.save();
 
@@ -157,7 +160,7 @@ export const deleteExpense = async (req: Request, res: Response, next: NextFunct
       throw new HttpErrorResponse(400, 'Provided id is not valid');
     }
 
-    await Expense.deleteOne({ _id: _id });
+    await Expense.deleteOne({ _id });
 
     res.status(200).json({ message: 'Income deleted' });
   } catch (error) {

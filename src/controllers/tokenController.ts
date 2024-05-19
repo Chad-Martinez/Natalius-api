@@ -59,16 +59,13 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
         // Refresh token was still valid
         const accessToken: string = jwt.sign(
           {
-            user: {
-              email: user.email,
-              userId: user._id,
-            },
+            userId: user._id,
           },
           process.env.JWT_SECRET!,
           { expiresIn: '10m' },
         );
 
-        const newRefreshToken: string = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, { expiresIn: '10d' });
+        const newRefreshToken: string = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15d' });
 
         user.refreshTokens = [...newRefreshTokenArray, newRefreshToken];
         await user.save();
