@@ -3,7 +3,7 @@ import { connection } from 'mongoose';
 import HttpErrorResponse from './classes/HttpErrorResponse';
 import dbConnect from './db/conn';
 import cookieParser from 'cookie-parser';
-import verifyJWT from './middleware/verifyJWT';
+import verifyJWT from './middleware/verifyJwt';
 import authRoutes from './routes/authRoutes';
 import gigRoutes from './routes/gigRoutes';
 import shiftRoutes from './routes/shiftRoutes';
