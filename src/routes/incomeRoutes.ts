@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { addIncome, getAllIncomeByUser, getIncomeById, updateIncome, getPaginatedIncome, deleteIncome } from '../controllers/incomeController';
+import { addIncome, getIncomeByUser, getIncomeById, updateIncome, getPaginatedIncome, deleteIncome } from '../controllers/incomeController';
 
 const router = Router();
 
-router.get('/user/:id/paginate', getPaginatedIncome);
+router.get('/paginate', getPaginatedIncome);
 
-router.get('/user/:userId', getAllIncomeByUser);
+router.get('/', getIncomeByUser);
 
 router.get('/:incomeId', getIncomeById);
 

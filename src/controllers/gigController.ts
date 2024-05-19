@@ -4,10 +4,11 @@ import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
 import Shift from '../models/Shift';
 import { HydratedDocument, isValidObjectId } from 'mongoose';
+import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
-export const getAllGigsByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getGigsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -37,9 +38,11 @@ export const getGigById = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const addGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addGig = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, address, contact, distance, userId } = req.body;
+    const { name, address, contact, distance } = req.body;
+
+    const { userId } = req;
 
     const gig = new Gig({
       name,
@@ -51,7 +54,7 @@ export const addGig = async (req: Request, res: Response, next: NextFunction): P
 
     await gig.save();
 
-    res.status(201).json({ gigId: gig._id });
+    res.status(201).json({ _id: gig._id });
   } catch (error) {
     console.error('Gig Controller Error - AddGig: ', error);
     if (error.name === 'ValidationError') {
@@ -65,7 +68,7 @@ export const addGig = async (req: Request, res: Response, next: NextFunction): P
 
 export const updateGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, name, address, contact, distance, userId } = req.body;
+    const { gigId, name, address, contact, distance } = req.body;
 
     if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -77,7 +80,6 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
     gig.address = address;
     gig.contact = contact;
     gig.distance = distance;
-    gig.userId = userId;
 
     await gig.save();
 
@@ -118,7 +120,7 @@ export const deleteGig = async (req: Request, res: Response, next: NextFunction)
 };
 
 export default {
-  getAllGigsByUser,
+  getGigsByUser,
   getGigById,
   addGig,
   updateGig,

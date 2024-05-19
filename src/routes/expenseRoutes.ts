@@ -3,9 +3,9 @@ import { addExpense, deleteExpense, getExpenseById, getExpensesByUser, getPagina
 
 const router = Router();
 
-router.get('/user/:id/paginate', getPaginatedExpenses);
+router.get('/', getExpensesByUser);
 
-router.get('/user/:userId', getExpensesByUser);
+router.get('/paginate', getPaginatedExpenses);
 
 router.get('/:_id', getExpenseById);
 

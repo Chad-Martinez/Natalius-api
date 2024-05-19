@@ -3,10 +3,11 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Vendor from '../models/Vendor';
 import { HydratedDocument, isValidObjectId } from 'mongoose';
 import { IVendor } from 'src/interfaces/Vendor.interface';
+import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
-export const getVendorsByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getVendorsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -36,9 +37,11 @@ export const getVendorById = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const addVendor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addVendor = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, userId, defaultType } = req.body;
+    const { name, defaultType } = req.body;
+
+    const { userId } = req;
 
     const vendor = new Vendor({
       name,
@@ -61,7 +64,7 @@ export const addVendor = async (req: Request, res: Response, next: NextFunction)
 
 export const updateVendor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, name, userId, defaultType } = req.body;
+    const { vendorId, name, defaultType } = req.body;
 
     if (!isValidObjectId(vendorId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -70,7 +73,6 @@ export const updateVendor = async (req: Request, res: Response, next: NextFuncti
     if (!vendor) throw new HttpErrorResponse(404, 'Requested resource not found');
 
     vendor.name = name;
-    vendor.userId = userId;
     vendor.defaultType = defaultType || 'NONE';
 
     await vendor.save();

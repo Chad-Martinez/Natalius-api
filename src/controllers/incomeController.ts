@@ -4,10 +4,11 @@ import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 import Income from '../models/Income';
+import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
-export const getAllIncomeByUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -39,19 +40,19 @@ export const getAllIncomeByUser = async (req: Request, res: Response, next: Next
       };
     });
 
-    res.status(200).json(mappedIncome);
+    res.status(200).json({ income: mappedIncome });
   } catch (error) {
     console.error('Income Controller Error - IncomeByUser: ', error);
     next(error);
   }
 };
 
-export const getPaginatedIncome = async (req: Request, res: Response, next: NextFunction) => {
+export const getPaginatedIncome = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const { page, limit } = req.query;
-    const { id } = req.params;
+    const { userId } = req;
 
-    if (!isValidObjectId(id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     if (!page || !limit) {
       throw new HttpErrorResponse(400, 'Missing proper query parameters');
@@ -60,7 +61,7 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
     const pipline: PipelineStage[] = [
       {
         $match: {
-          userId: new ObjectId(id),
+          userId: new ObjectId(userId),
         },
       },
       {
@@ -73,7 +74,7 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
 
     if (count) {
       const income: HydratedDocument<IIncome | IIncomePopulated>[] = await Income.find(
-        { userId: id },
+        { userId },
         { __v: 0 },
         { skip: (+page - 1) * +limit, limit: +limit },
       )
@@ -104,7 +105,7 @@ export const getPaginatedIncome = async (req: Request, res: Response, next: Next
         };
       });
 
-      res.status(200).json({ mappedIncome, count });
+      res.status(200).json({ income: mappedIncome, count });
     } else {
       res.status(200).json({ income: [], count });
     }
@@ -146,16 +147,18 @@ export const getIncomeById = async (req: Request, res: Response, next: NextFunct
       updated_at,
     };
 
-    res.status(200).json(mappedIncome);
+    res.status(200).json({ income: mappedIncome });
   } catch (error) {
     console.error('Income Controller Error - IncomeById: ', error);
     next(error);
   }
 };
 
-export const addIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addIncome = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, shiftId, date, amount, type, userId } = req.body;
+    const { gigId, shiftId, date, amount, type } = req.body;
+
+    const { userId } = req;
 
     const income = new Income({
       gigId,
@@ -181,7 +184,7 @@ export const addIncome = async (req: Request, res: Response, next: NextFunction)
 
 export const updateIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { incomeId, gigId, shiftId, date, amount, type, userId } = req.body;
+    const { incomeId, gigId, shiftId, date, amount, type } = req.body;
 
     if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -194,7 +197,6 @@ export const updateIncome = async (req: Request, res: Response, next: NextFuncti
     income.date = date;
     income.amount = amount;
     income.type = type;
-    income.userId = userId;
 
     await income.save();
 
@@ -226,7 +228,7 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
 };
 
 export default {
-  getAllIncomeByUser,
+  getIncomeByUser,
   getIncomeById,
   addIncome,
   updateIncome,
