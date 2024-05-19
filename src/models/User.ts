@@ -32,6 +32,7 @@ const userScheama = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    refreshTokens: [String],
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );

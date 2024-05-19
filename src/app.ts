@@ -1,13 +1,16 @@
 import express, { Request, Express, Response, NextFunction, urlencoded, json } from 'express';
+import { connection } from 'mongoose';
 import HttpErrorResponse from './classes/HttpErrorResponse';
 import dbConnect from './db/conn';
+import cookieParser from 'cookie-parser';
+import verifyJWT from './middleware/verifyJWT';
 import authRoutes from './routes/authRoutes';
 import gigRoutes from './routes/gigRoutes';
 import shiftRoutes from './routes/shiftRoutes';
 import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
 import expenseRoutes from './routes/expenseRoutes';
-import { connection } from 'mongoose';
+import tokenRoutes from './routes/tokenRoutes';
 
 dbConnect();
 
@@ -16,10 +19,12 @@ const port = process.env.PORT || 5050;
 
 app.use(json());
 app.use(urlencoded({ extended: true }));
-
-app.get('/', (req: Request, res: Response) => res.send('Ooooh Yea!'));
+app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/tokens', tokenRoutes);
+
+app.use(verifyJWT);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);

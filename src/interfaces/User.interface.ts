@@ -4,4 +4,5 @@ export interface IUser {
   firstName: string;
   lastName: string;
   isEmailVerified?: boolean;
+  refreshTokens: Array<String>;
 }

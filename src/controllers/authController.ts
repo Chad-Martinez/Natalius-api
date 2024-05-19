@@ -91,18 +91,48 @@ export const register: RequestHandler = async (req: Request, res: Response, next
 
 export const login: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const cookies = req.cookies;
+
     const { email, password } = req.body;
     if (!email || !password) throw new HttpErrorResponse(409, 'Email and password required');
 
     const user: HydratedDocument<IUser> | null = await User.findOne({ email: email });
     if (!user) throw new HttpErrorResponse(404, 'Email or password is incorrect');
 
+    if (!user.isEmailVerified) throw new HttpErrorResponse(401, 'Please verify your email address to activate your account.');
+
     const isMatch: boolean = await bcrypt.compare(password, user.hashedPw);
     if (!isMatch) throw new HttpErrorResponse(401, 'Email or password is incorrect');
 
-    if (!user.isEmailVerified) throw new HttpErrorResponse(401, 'Please verify your email address to activate your account.');
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '10m' },
+    );
 
-    res.status(200).json({ id: user._id });
+    const newRefreshToken = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15d' });
+
+    let newRefreshTokenArray = !cookies?.jwt ? user.refreshTokens : user.refreshTokens.filter((rt) => rt !== cookies.jwt);
+
+    if (cookies?.jwt) {
+      const refreshToken = cookies.jwt;
+      const foundToken = await User.findOne({ refreshToken });
+
+      if (!foundToken) {
+        newRefreshTokenArray = [];
+      }
+
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+    }
+
+    user.refreshTokens = [...newRefreshTokenArray, newRefreshToken];
+    await user.save();
+
+    res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'none', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+
+    res.status(200).json({ id: user._id, accessToken });
   } catch (error) {
     console.error('Auth Controller Error - Login: ', error);
     if (error instanceof HttpErrorResponse) {
@@ -116,7 +146,32 @@ export const login: RequestHandler = async (req: Request, res: Response, next: N
   }
 };
 
-const verifyEmail: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const logout: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.sendStatus(204);
+
+    const refreshTokens = cookies.jwt;
+
+    const user = await User.findOne({ refreshTokens });
+    if (!user) {
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+      return res.sendStatus(204);
+    }
+
+    user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshTokens);
+    const result = await user.save();
+    console.log('result ', result);
+
+    res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Auth Controller Error - Logout: ', error);
+    next(error);
+  }
+};
+
+export const verifyEmail: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { token } = req.params;
     const decodedToken: string | JwtPayload = jwt.verify(token, process.env.JWT_SECRET!);
@@ -138,5 +193,6 @@ const verifyEmail: RequestHandler = async (req: Request, res: Response, next: Ne
 export default {
   register,
   login,
+  logout,
   verifyEmail,
 };
