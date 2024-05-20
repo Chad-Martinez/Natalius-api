@@ -16,7 +16,22 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
 
     res.status(200).json(gigs);
   } catch (error) {
-    console.error('Gig Controller Error - GigByUser: ', error);
+    console.error('Gig Controller Error - GigsByUser: ', error);
+    next(error);
+  }
+};
+
+export const getGigNames = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req;
+
+    if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
+    const gigs: HydratedDocument<IGig>[] = await Gig.find({ userId }, { name: 1 });
+
+    res.status(200).json(gigs);
+  } catch (error) {
+    console.error('Gig Controller Error - GigNames: ', error);
     next(error);
   }
 };
@@ -121,6 +136,7 @@ export const deleteGig = async (req: Request, res: Response, next: NextFunction)
 
 export default {
   getGigsByUser,
+  getGigNames,
   getGigById,
   addGig,
   updateGig,
