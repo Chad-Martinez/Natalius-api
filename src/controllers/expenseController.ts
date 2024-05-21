@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Expense from '../models/Expense';
@@ -44,19 +43,7 @@ export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, 
       throw new HttpErrorResponse(400, 'Missing proper query parameters');
     }
 
-    const pipline: PipelineStage[] = [
-      {
-        $match: {
-          userId: new ObjectId(userId),
-        },
-      },
-      {
-        $count: 'count',
-      },
-    ];
-
-    const incomeCount = await Expense.aggregate(pipline);
-    const count: number = incomeCount.length > 0 ? incomeCount[0].count : 0;
+    const count = await Expense.find({ userId }).countDocuments();
 
     if (count) {
       const income: HydratedDocument<IExpense>[] = await Expense.find({ userId }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
@@ -69,9 +56,9 @@ export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, 
         })
         .exec();
 
-      res.status(200).json({ income, count });
+      res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
     } else {
-      res.status(200).json({ income: [], count });
+      res.status(200).json({ income: [], count, pages: 0 });
     }
   } catch (error) {
     console.error('Expense Controller Error - PaginatedExpenses: ', error);
