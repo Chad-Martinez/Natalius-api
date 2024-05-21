@@ -1,12 +1,18 @@
 import { ObjectId } from 'mongodb';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Expense from '../models/Expense';
-import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
+import { Aggregate, HydratedDocument, PipelineStage, Types, isValidObjectId } from 'mongoose';
 import { IExpense } from 'src/interfaces/Expense.interface';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
+import dayjs, { Dayjs } from 'dayjs';
+import dayOfYear from 'dayjs/plugin/dayOfYear';
+import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import { ExpensesByTypeAndPeriod } from 'src/types/expense-types';
+dayjs.extend(dayOfYear);
+dayjs.extend(quarterOfYear);
 
-export const getExpensesByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getExpensesByUser: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
 
@@ -26,7 +32,7 @@ export const getExpensesByUser = async (req: ICustomRequest, res: Response, next
   }
 };
 
-export const getPaginatedExpenses = async (req: ICustomRequest, res: Response, next: NextFunction) => {
+export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { page, limit } = req.query;
 
@@ -73,7 +79,131 @@ export const getPaginatedExpenses = async (req: ICustomRequest, res: Response, n
   }
 };
 
-export const getExpenseById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getExpenseGraphData: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req;
+    const { period } = req.params;
+
+    let queryDate: Dayjs;
+    switch (period) {
+      case 'week':
+        queryDate = dayjs().startOf('week');
+        break;
+      case 'month':
+        queryDate = dayjs().startOf('month');
+        break;
+      case 'quarter':
+        queryDate = dayjs().startOf('quarter');
+        break;
+      case 'year':
+        queryDate = dayjs().startOf('year');
+        break;
+      default:
+        queryDate = dayjs().startOf('week');
+        break;
+    }
+
+    const pipline: PipelineStage[] = [
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          date: {
+            $gte: new Date(queryDate.format('MM/DD/YY')),
+          },
+        },
+      },
+    ];
+
+    if (period === 'week') {
+      pipline.push(
+        {
+          $project: {
+            year: { $year: '$date' },
+            month: { $month: '$date' },
+            day: { $dayOfMonth: '$date' },
+            amount: 1,
+            type: 1,
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: '$year',
+              month: '$month',
+              day: '$day',
+              type: '$type',
+            },
+            totalAmount: { $sum: '$amount' },
+          },
+        },
+        {
+          $sort: {
+            '_id.year': 1,
+            '_id.month': 1,
+            '_id.day': 1,
+            '_id.type': 1,
+          },
+        },
+        {
+          $project: {
+            year: '$_id.year',
+            month: '$_id.month',
+            day: '$_id.day',
+            type: '$_id.type',
+            totalAmount: { $round: ['$totalAmount', 2] },
+            _id: 0,
+          },
+        },
+      );
+    } else {
+      pipline.push(
+        {
+          $project: {
+            year: { $year: '$date' },
+            month: { $month: '$date' },
+            amount: 1,
+            type: 1,
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: '$year',
+              month: '$month',
+              type: '$type',
+            },
+            totalAmount: { $sum: '$amount' },
+          },
+        },
+        {
+          $sort: {
+            '_id.year': 1,
+            '_id.month': 1,
+            '_id.type': 1,
+          },
+        },
+        {
+          $project: {
+            year: '$_id.year',
+            month: '$_id.month',
+            type: '$_id.type',
+            totalAmount: { $round: ['$totalAmount', 2] },
+            _id: 0,
+          },
+        },
+      );
+    }
+
+    const expenses: Aggregate<Array<ExpensesByTypeAndPeriod>>[] = await Expense.aggregate(pipline);
+
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error('Expense Controller Error - ExpenseGraphData: ', error);
+    next(error);
+  }
+};
+
+export const getExpenseById: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { _id } = req.params;
 
@@ -93,7 +223,7 @@ export const getExpenseById = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const addExpense = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+export const addExpense: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { vendorId, date, amount, type, distance } = req.body;
 
@@ -122,7 +252,7 @@ export const addExpense = async (req: ICustomRequest, res: Response, next: NextF
   }
 };
 
-export const updateExpense = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateExpense: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { _id, vendorId, date, amount, type, distance } = req.body;
 
@@ -152,7 +282,7 @@ export const updateExpense = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const deleteExpense = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const deleteExpense: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { _id } = req.params;
 
@@ -172,6 +302,7 @@ export const deleteExpense = async (req: Request, res: Response, next: NextFunct
 export default {
   getExpensesByUser,
   getPaginatedExpenses,
+  getExpenseGraphData,
   getExpenseById,
   addExpense,
   updateExpense,
