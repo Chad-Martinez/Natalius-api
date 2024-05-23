@@ -11,6 +11,8 @@ import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
 import expenseRoutes from './routes/expenseRoutes';
 import tokenRoutes from './routes/tokenRoutes';
+import cors from 'cors';
+import { corsOptions } from './config/corsOptions';
 
 dbConnect();
 
@@ -18,6 +20,7 @@ const app: Express = express();
 const port = process.env.PORT || 5050;
 
 app.use(json());
+app.use(cors(corsOptions));
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 
