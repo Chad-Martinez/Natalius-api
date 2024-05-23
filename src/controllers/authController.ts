@@ -73,9 +73,9 @@ export const register: RequestHandler = async (req: Request, res: Response, next
       },
     };
 
-    await transporter.sendMail(mail);
-
     res.status(201).json({ id: createdUser._id, message: 'Account created. Please verify your email address to activate your account' });
+
+    await transporter.sendMail(mail);
   } catch (error) {
     console.error('Auth Controller Error - Register: ', error);
     if (error instanceof HttpErrorResponse) {
