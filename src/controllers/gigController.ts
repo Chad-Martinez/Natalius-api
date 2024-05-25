@@ -6,13 +6,105 @@ import Shift from '../models/Shift';
 import { HydratedDocument, isValidObjectId } from 'mongoose';
 import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export const getGigsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const gigs: HydratedDocument<IGig>[] = await Gig.find({ userId: userId }).populate('shifts').exec();
+    const gigs = await Gig.aggregate([
+      {
+        $lookup: {
+          from: 'shifts',
+          localField: 'shifts',
+          foreignField: '_id',
+          as: 'shiftDetails',
+        },
+      },
+      {
+        $addFields: {
+          shifts: {
+            $map: {
+              input: '$shiftDetails',
+              as: 'shift',
+              in: {
+                _id: '$$shift._id',
+                startDate: {
+                  $concat: [
+                    {
+                      $arrayElemAt: [DAYS_OF_WEEK, { $subtract: [{ $dayOfWeek: '$$shift.startDate' }, 1] }],
+                    },
+                    ' ',
+                    { $substr: [{ $dateToString: { format: '%b', date: '$$shift.startDate' } }, 0, 3] },
+                    ' ',
+                    { $substr: [{ $dateToString: { format: '%d', date: '$$shift.startDate' } }, 0, 2] },
+                    " '",
+                    { $substr: [{ $dateToString: { format: '%Y', date: '$$shift.startDate' } }, 2, 2] },
+                  ],
+                },
+                endDate: {
+                  $concat: [
+                    {
+                      $arrayElemAt: [DAYS_OF_WEEK, { $subtract: [{ $dayOfWeek: '$$shift.endDate' }, 1] }],
+                    },
+                    ' ',
+                    { $substr: [{ $dateToString: { format: '%b', date: '$$shift.endDate' } }, 0, 3] },
+                    ' ',
+                    { $substr: [{ $dateToString: { format: '%d', date: '$$shift.endDate' } }, 0, 2] },
+                    " '",
+                    { $substr: [{ $dateToString: { format: '%Y', date: '$$shift.endDate' } }, 2, 2] },
+                  ],
+                },
+                startTime: {
+                  $concat: [
+                    {
+                      $dateToString: {
+                        format: '%H:%M',
+                        date: '$$shift.startTime',
+                      },
+                    },
+                    {
+                      $cond: [{ $gte: [{ $hour: { date: '$$shift.startTime' } }, 12] }, 'pm', 'am'],
+                    },
+                  ],
+                },
+                endTime: {
+                  $concat: [
+                    {
+                      $dateToString: {
+                        format: '%H:%M',
+                        date: '$$shift.endTime',
+                      },
+                    },
+                    {
+                      $cond: [{ $gte: [{ $hour: { date: '$$shift.endTime' } }, 12] }, 'pm', 'am'],
+                    },
+                  ],
+                },
+                notes: '$$shift.notes',
+                created_at: '$$shift.created_at',
+                updated_at: '$$shift.updated_at',
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          address: 1,
+          contact: 1,
+          shifts: 1,
+          distance: 1,
+          userId: 1,
+          created_at: 1,
+          updated_at: 1,
+        },
+      },
+    ]).exec();
 
     res.status(200).json(gigs);
   } catch (error) {
