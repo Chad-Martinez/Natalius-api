@@ -3,7 +3,7 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
 import Shift from '../models/Shift';
-import { HydratedDocument, isValidObjectId } from 'mongoose';
+import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -15,6 +15,11 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const gigs = await Gig.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+        },
+      },
       {
         $lookup: {
           from: 'shifts',
