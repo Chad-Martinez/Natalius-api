@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import { EnumType } from 'typescript';
 
 interface IIncomeBase {
-  shiftId: Types.ObjectId;
+  shiftId?: Types.ObjectId;
   date: Date;
   amount: Number;
   type: EnumType;

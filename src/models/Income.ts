@@ -10,7 +10,6 @@ const incomeSchema = new Schema<IIncome | IIncomePopulated>(
     },
     shiftId: {
       type: Schema.Types.ObjectId,
-      required: [true, 'Shift is required'],
       ref: 'Shift',
     },
     date: {
