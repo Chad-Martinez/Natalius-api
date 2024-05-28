@@ -89,6 +89,69 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
               },
             },
           },
+          fullAddress: {
+            $trim: {
+              input: {
+                $reduce: {
+                  input: [
+                    {
+                      $cond: {
+                        if: { $ifNull: ['$address.street', false] },
+                        then: '$address.street',
+                        else: '',
+                      },
+                    },
+                    {
+                      $cond: {
+                        if: { $ifNull: ['$address.city', false] },
+                        then: {
+                          $concat: [
+                            '$address.city',
+                            {
+                              $cond: {
+                                if: { $and: [{ $ifNull: ['$address.city', false] }, { $ifNull: ['$address.state', false] }] },
+                                then: ',',
+                                else: '',
+                              },
+                            },
+                          ],
+                        },
+                        else: '',
+                      },
+                    },
+                    {
+                      $cond: {
+                        if: { $ifNull: ['$address.state', false] },
+                        then: '$address.state',
+                        else: '',
+                      },
+                    },
+                    {
+                      $cond: {
+                        if: { $ifNull: ['$address.zip', false] },
+                        then: { $toString: '$address.zip' },
+                        else: '',
+                      },
+                    },
+                  ],
+                  initialValue: '',
+                  in: {
+                    $concat: [
+                      '$$value',
+                      {
+                        $cond: {
+                          if: { $eq: ['$$value', ''] },
+                          then: '',
+                          else: ' ',
+                        },
+                      },
+                      '$$this',
+                    ],
+                  },
+                },
+              },
+            },
+          },
         },
       },
       {
@@ -96,6 +159,7 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
           _id: 1,
           name: 1,
           address: 1,
+          fullAddress: 1,
           contact: 1,
           shifts: 1,
           distance: 1,
