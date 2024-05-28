@@ -138,7 +138,6 @@ const logout = async (req, res, next) => {
         }
         user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshTokens);
         const result = await user.save();
-        console.log('result ', result);
         res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
         res.sendStatus(204);
     }

@@ -15,6 +15,9 @@ exports.corsOptions = {
             callback(new HttpErrorResponse_1.default(400, 'Not allowed by CORS'));
         }
     },
+    credentials: true,
+    methods: ['GET, POST, PUT, PATCH, DELETE, OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
     optionsSuccessStatus: 200,
 };
 //# sourceMappingURL=corsOptions.js.map
