@@ -160,7 +160,7 @@ export const logout: RequestHandler = async (req: Request, res: Response, next: 
     }
 
     user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshTokens);
-    const result = await user.save();
+    await user.save();
 
     res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
     res.sendStatus(204);
