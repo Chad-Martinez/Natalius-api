@@ -12,9 +12,15 @@ const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const getGigsByUser = async (req, res, next) => {
     try {
         const { userId } = req;
+        console.log(userId);
         if (!(0, mongoose_1.isValidObjectId)(userId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const gigs = await Gig_1.default.aggregate([
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
+                },
+            },
             {
                 $lookup: {
                     from: 'shifts',
@@ -169,6 +175,7 @@ const getGigsByUser = async (req, res, next) => {
                 },
             },
         ]).exec();
+        console.log('gigs', gigs);
         res.status(200).json(gigs);
     }
     catch (error) {
