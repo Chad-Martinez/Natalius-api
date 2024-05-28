@@ -9,7 +9,6 @@ const incomeSchema = new mongoose_1.Schema({
     },
     shiftId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        required: [true, 'Shift is required'],
         ref: 'Shift',
     },
     date: {
