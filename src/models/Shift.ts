@@ -8,21 +8,13 @@ const shiftSchema = new Schema<IShift>(
       required: true,
       ref: 'Gig',
     },
-    startDate: {
+    start: {
       type: Date,
-      required: [true, 'Start date required'],
+      required: [true, 'Start date and time required'],
     },
-    startTime: {
+    end: {
       type: Date,
-      required: [true, 'Start time required'],
-    },
-    endDate: {
-      type: Date,
-      required: [true, 'End date required'],
-    },
-    endTime: {
-      type: Date,
-      required: [true, 'End time required'],
+      required: [true, 'End date and time required'],
     },
     notes: {
       type: String,

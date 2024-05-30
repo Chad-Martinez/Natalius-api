@@ -8,7 +8,6 @@ const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorRespons
 const Gig_1 = __importDefault(require("../models/Gig"));
 const Shift_1 = __importDefault(require("../models/Shift"));
 const mongoose_1 = require("mongoose");
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const getGigsByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -36,58 +35,8 @@ const getGigsByUser = async (req, res, next) => {
                             as: 'shift',
                             in: {
                                 _id: '$$shift._id',
-                                startDate: {
-                                    $concat: [
-                                        {
-                                            $arrayElemAt: [DAYS_OF_WEEK, { $subtract: [{ $dayOfWeek: '$$shift.startDate' }, 1] }],
-                                        },
-                                        ' ',
-                                        { $substr: [{ $dateToString: { format: '%b', date: '$$shift.startDate' } }, 0, 3] },
-                                        ' ',
-                                        { $substr: [{ $dateToString: { format: '%d', date: '$$shift.startDate' } }, 0, 2] },
-                                        " '",
-                                        { $substr: [{ $dateToString: { format: '%Y', date: '$$shift.startDate' } }, 2, 2] },
-                                    ],
-                                },
-                                endDate: {
-                                    $concat: [
-                                        {
-                                            $arrayElemAt: [DAYS_OF_WEEK, { $subtract: [{ $dayOfWeek: '$$shift.endDate' }, 1] }],
-                                        },
-                                        ' ',
-                                        { $substr: [{ $dateToString: { format: '%b', date: '$$shift.endDate' } }, 0, 3] },
-                                        ' ',
-                                        { $substr: [{ $dateToString: { format: '%d', date: '$$shift.endDate' } }, 0, 2] },
-                                        " '",
-                                        { $substr: [{ $dateToString: { format: '%Y', date: '$$shift.endDate' } }, 2, 2] },
-                                    ],
-                                },
-                                startTime: {
-                                    $concat: [
-                                        {
-                                            $dateToString: {
-                                                format: '%H:%M',
-                                                date: '$$shift.startTime',
-                                            },
-                                        },
-                                        {
-                                            $cond: [{ $gte: [{ $hour: { date: '$$shift.startTime' } }, 12] }, 'pm', 'am'],
-                                        },
-                                    ],
-                                },
-                                endTime: {
-                                    $concat: [
-                                        {
-                                            $dateToString: {
-                                                format: '%H:%M',
-                                                date: '$$shift.endTime',
-                                            },
-                                        },
-                                        {
-                                            $cond: [{ $gte: [{ $hour: { date: '$$shift.endTime' } }, 12] }, 'pm', 'am'],
-                                        },
-                                    ],
-                                },
+                                start: '$$shift.start',
+                                end: '$$shift.end',
                                 notes: '$$shift.notes',
                                 created_at: '$$shift.created_at',
                                 updated_at: '$$shift.updated_at',

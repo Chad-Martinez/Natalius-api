@@ -1,10 +1,8 @@
 import { Types } from 'mongoose';
 
 export interface IShift {
-  startDate: Date;
-  startTime: Date;
-  endDate: Date;
-  endTime: Date;
+  start: Date;
+  end: Date;
   notes: String;
   gigId: Types.ObjectId;
 }
