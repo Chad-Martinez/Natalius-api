@@ -16,7 +16,7 @@ const verifyJWT = (req: ICustomRequest, res: Response, next: NextFunction): Resp
   } catch (error) {
     console.error('VerifyJwt Middleware Error: ', error);
     if (error instanceof TokenExpiredError) {
-      const err = new HttpErrorResponse(401, 'Unauthorized - Expired Token');
+      const err = new HttpErrorResponse(403, 'Unauthorized - Expired Token');
       next(err);
     }
     next(error);

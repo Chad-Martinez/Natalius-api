@@ -9,7 +9,7 @@ import User from '../models/User';
 const handleRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const cookies = req.cookies;
-    if (!cookies?.jwt) throw new HttpErrorResponse(401, 'Unauthorized - Missing token');
+    if (!cookies?.jwt) throw new HttpErrorResponse(418, 'Forbbiden - Missing token');
     const refreshToken: string = cookies.jwt;
     res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
     const user: HydratedDocument<IUser> | null = await User.findOne({ refreshTokens: refreshToken });
@@ -20,7 +20,7 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
         process.env.JWT_SECRET!,
         async (error: VerifyErrors | null, decoded: string | JwtPayload | undefined | IRefreshToken): Promise<void> => {
           if (error) {
-            const err = new HttpErrorResponse(403, 'Forbidden - Reuse');
+            const err = new HttpErrorResponse(418, 'Forbidden - Reuse');
             next(err);
             return;
           }
@@ -36,7 +36,7 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
           }
         },
       );
-      throw new HttpErrorResponse(403, 'Forbidden - Reuse');
+      throw new HttpErrorResponse(418, 'Forbidden - Reuse');
     }
 
     const newRefreshTokenArray: String[] = user.refreshTokens.filter((rt) => rt !== refreshToken);
@@ -51,7 +51,7 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
         }
         const token = decoded as IRefreshToken;
         if (error || user.email !== token.email) {
-          const err = new HttpErrorResponse(403, 'Forbidden - Exp');
+          const err = new HttpErrorResponse(418, 'Forbidden - Exp');
           next(err);
           return;
         }
