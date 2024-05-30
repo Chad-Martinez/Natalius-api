@@ -12,7 +12,7 @@ export const getAllShiftsByGig = async (req: Request, res: Response, next: NextF
 
     if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId }).sort({ startDate: 1 });
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId }).sort({ start: 1 });
 
     res.status(200).json(shifts);
   } catch (error) {
@@ -40,7 +40,7 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
 
 export const addShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, startDate, startTime, endDate, endTime, notes } = req.body;
+    const { gigId, start, end, notes } = req.body;
 
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
@@ -48,10 +48,8 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
 
     const shift = new Shift({
       gigId,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
+      start,
+      end,
       notes,
     });
 
@@ -77,7 +75,7 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
 
 export const updateShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { shiftId, gigId, startDate, startTime, endDate, endTime, notes } = req.body;
+    const { shiftId, gigId, start, end, notes } = req.body;
 
     if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -86,10 +84,8 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
     shift.gigId = gigId;
-    shift.startDate = startDate;
-    shift.startTime = startTime;
-    shift.endDate = endDate;
-    shift.endTime = endTime;
+    shift.start = start;
+    shift.end = end;
     shift.notes = notes;
 
     await shift.save();
