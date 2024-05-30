@@ -13,7 +13,7 @@ const getAllShiftsByGig = async (req, res, next) => {
         const { gigId } = req.params;
         if (!(0, mongoose_1.isValidObjectId)(gigId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const shifts = await Shift_1.default.find({ gigId: gigId }).sort({ startDate: 1 });
+        const shifts = await Shift_1.default.find({ gigId: gigId }).sort({ start: 1 });
         res.status(200).json(shifts);
     }
     catch (error) {
@@ -40,16 +40,14 @@ const getShiftById = async (req, res, next) => {
 exports.getShiftById = getShiftById;
 const addShift = async (req, res, next) => {
     try {
-        const { gigId, startDate, startTime, endDate, endTime, notes } = req.body;
+        const { gigId, start, end, notes } = req.body;
         const gig = await Gig_1.default.findById(gigId);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
         const shift = new Shift_1.default({
             gigId,
-            startDate,
-            startTime,
-            endDate,
-            endTime,
+            start,
+            end,
             notes,
         });
         const savedShift = await shift.save();
@@ -74,17 +72,15 @@ const addShift = async (req, res, next) => {
 exports.addShift = addShift;
 const updateShift = async (req, res, next) => {
     try {
-        const { shiftId, gigId, startDate, startTime, endDate, endTime, notes } = req.body;
+        const { shiftId, gigId, start, end, notes } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(shiftId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const shift = await Shift_1.default.findById(shiftId);
         if (!shift)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
         shift.gigId = gigId;
-        shift.startDate = startDate;
-        shift.startTime = startTime;
-        shift.endDate = endDate;
-        shift.endTime = endTime;
+        shift.start = start;
+        shift.end = end;
         shift.notes = notes;
         await shift.save();
         res.status(200).json({ message: 'Shift updated' });
