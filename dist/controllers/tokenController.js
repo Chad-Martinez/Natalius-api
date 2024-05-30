@@ -10,14 +10,14 @@ const handleRefreshToken = async (req, res, next) => {
     try {
         const cookies = req.cookies;
         if (!(cookies === null || cookies === void 0 ? void 0 : cookies.jwt))
-            throw new HttpErrorResponse_1.default(401, 'Unauthorized - Missing token');
+            throw new HttpErrorResponse_1.default(418, 'Forbbiden - Missing token');
         const refreshToken = cookies.jwt;
         res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
         const user = await User_1.default.findOne({ refreshTokens: refreshToken });
         if (!user) {
             jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_SECRET, async (error, decoded) => {
                 if (error) {
-                    const err = new HttpErrorResponse_1.default(403, 'Forbidden - Reuse');
+                    const err = new HttpErrorResponse_1.default(418, 'Forbidden - Reuse');
                     next(err);
                     return;
                 }
@@ -30,7 +30,7 @@ const handleRefreshToken = async (req, res, next) => {
                     await hackedUser.save();
                 }
             });
-            throw new HttpErrorResponse_1.default(403, 'Forbidden - Reuse');
+            throw new HttpErrorResponse_1.default(418, 'Forbidden - Reuse');
         }
         const newRefreshTokenArray = user.refreshTokens.filter((rt) => rt !== refreshToken);
         jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_SECRET, async (error, decoded) => {
@@ -40,7 +40,7 @@ const handleRefreshToken = async (req, res, next) => {
             }
             const token = decoded;
             if (error || user.email !== token.email) {
-                const err = new HttpErrorResponse_1.default(403, 'Forbidden - Exp');
+                const err = new HttpErrorResponse_1.default(418, 'Forbidden - Exp');
                 next(err);
                 return;
             }

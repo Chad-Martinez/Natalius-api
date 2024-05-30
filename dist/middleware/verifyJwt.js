@@ -40,7 +40,7 @@ const verifyJWT = (req, res, next) => {
     catch (error) {
         console.error('VerifyJwt Middleware Error: ', error);
         if (error instanceof jsonwebtoken_1.TokenExpiredError) {
-            const err = new HttpErrorResponse_1.default(401, 'Unauthorized - Expired Token');
+            const err = new HttpErrorResponse_1.default(403, 'Unauthorized - Expired Token');
             next(err);
         }
         next(error);
