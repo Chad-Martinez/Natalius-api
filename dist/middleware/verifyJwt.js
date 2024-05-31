@@ -32,7 +32,7 @@ const verifyJWT = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization || req.headers.Authorization;
         if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer ')))
-            throw new HttpErrorResponse_1.default(401, 'Unauthorized - Missing Token');
+            throw new HttpErrorResponse_1.default(403, 'Unauthorized - Missing Token');
         const token = authHeader.split(' ')[1];
         const decodedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         req.userId = decodedToken.userId;

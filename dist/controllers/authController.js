@@ -107,7 +107,7 @@ const login = async (req, res, next) => {
         }
         user.refreshTokens = [...newRefreshTokenArray, newRefreshToken];
         await user.save();
-        res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'none', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'none', secure: true, maxAge: 15 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ id: user._id, accessToken });
     }
     catch (error) {
