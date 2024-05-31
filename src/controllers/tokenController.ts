@@ -74,7 +74,7 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
           httpOnly: true,
           secure: true,
           sameSite: 'none',
-          maxAge: 24 * 60 * 60 * 1000,
+          maxAge: 15 * 24 * 60 * 60 * 1000,
         });
 
         res.json({ accessToken });
