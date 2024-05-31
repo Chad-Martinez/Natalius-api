@@ -7,7 +7,7 @@ import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 const verifyJWT = (req: ICustomRequest, res: Response, next: NextFunction): Response | void => {
   try {
     const authHeader = req.headers.authorization || (req.headers.Authorization as string);
-    if (!authHeader?.startsWith('Bearer ')) throw new HttpErrorResponse(401, 'Unauthorized - Missing Token');
+    if (!authHeader?.startsWith('Bearer ')) throw new HttpErrorResponse(403, 'Unauthorized - Missing Token');
 
     const token: string = authHeader.split(' ')[1];
     const decodedToken: JwtPayload | string = jwt.verify(token, process.env.JWT_SECRET!) as IAccessToken;
