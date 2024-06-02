@@ -27,6 +27,7 @@ const gigSchema = new mongoose_1.Schema({
     shifts: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Shift' }],
     distance: Number,
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
+    isArchived: { type: Boolean, default: false },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 gigSchema.index({ userId: 1 });
 exports.default = (0, mongoose_1.model)('Gig', gigSchema);

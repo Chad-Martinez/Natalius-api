@@ -16,6 +16,7 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
       {
         $match: {
           userId: new Types.ObjectId(userId),
+          isArchived: false,
         },
       },
       {
@@ -116,6 +117,7 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
           contact: 1,
           shifts: 1,
           distance: 1,
+          isArchived: 1,
           userId: 1,
           created_at: 1,
           updated_at: 1,
@@ -192,18 +194,21 @@ export const addGig = async (req: ICustomRequest, res: Response, next: NextFunct
 
 export const updateGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, name, address, contact, distance } = req.body;
+    const { _id, name, address, contact, distance, isArchived } = req.body;
 
-    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
-
-    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
+    if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    console.log('name ', name);
+    console.log('address ', address);
+    console.log('isArchived ', isArchived);
+    const gig: HydratedDocument<IGig> | null = await Gig.findById(_id);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    gig.name = name;
-    gig.address = address;
-    gig.contact = contact;
-    gig.distance = distance;
+    if (name) gig.name = name;
+    if (address) gig.address = address;
+    if (contact) gig.contact = contact;
+    if (distance) gig.distance = distance;
+    if (isArchived) gig.isArchived = isArchived;
 
     await gig.save();
 
