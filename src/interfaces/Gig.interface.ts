@@ -16,4 +16,5 @@ export interface IGig extends Document {
   shifts: (Types.ObjectId | IShift)[] | null;
   distance: Number;
   userId: Types.ObjectId;
+  isArchived: boolean;
 }
