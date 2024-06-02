@@ -17,6 +17,7 @@ const getGigsByUser = async (req, res, next) => {
             {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
+                    isArchived: false,
                 },
             },
             {
@@ -117,6 +118,7 @@ const getGigsByUser = async (req, res, next) => {
                     contact: 1,
                     shifts: 1,
                     distance: 1,
+                    isArchived: 1,
                     userId: 1,
                     created_at: 1,
                     updated_at: 1,
@@ -189,16 +191,25 @@ const addGig = async (req, res, next) => {
 exports.addGig = addGig;
 const updateGig = async (req, res, next) => {
     try {
-        const { gigId, name, address, contact, distance } = req.body;
-        if (!(0, mongoose_1.isValidObjectId)(gigId))
+        const { _id, name, address, contact, distance, isArchived } = req.body;
+        if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gig = await Gig_1.default.findById(gigId);
+        console.log('name ', name);
+        console.log('address ', address);
+        console.log('isArchived ', isArchived);
+        const gig = await Gig_1.default.findById(_id);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        gig.name = name;
-        gig.address = address;
-        gig.contact = contact;
-        gig.distance = distance;
+        if (name)
+            gig.name = name;
+        if (address)
+            gig.address = address;
+        if (contact)
+            gig.contact = contact;
+        if (distance)
+            gig.distance = distance;
+        if (isArchived)
+            gig.isArchived = isArchived;
         await gig.save();
         res.status(200).json({ message: 'Gig Information Updated' });
     }
