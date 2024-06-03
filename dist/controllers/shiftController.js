@@ -86,7 +86,6 @@ const updateShift = async (req, res, next) => {
             shift.notes = notes;
         await shift.save();
         const gig = await Gig_1.default.findOne({ shifts: shift._id });
-        console.log('gig ', gig);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
         if (gigId !== gig._id) {

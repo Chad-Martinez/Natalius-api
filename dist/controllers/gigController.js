@@ -17,7 +17,6 @@ const getGigsByUser = async (req, res, next) => {
             {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
-                    isArchived: false,
                 },
             },
             {
@@ -200,9 +199,6 @@ const updateGig = async (req, res, next) => {
         const { _id, name, address, contact, distance, isArchived } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        console.log('name ', name);
-        console.log('address ', address);
-        console.log('isArchived ', isArchived);
         const gig = await Gig_1.default.findById(_id);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
@@ -213,7 +209,7 @@ const updateGig = async (req, res, next) => {
             gig.contact = contact;
         if (distance)
             gig.distance = distance;
-        if (isArchived)
+        if (isArchived !== null || isArchived !== undefined || isArchived !== '')
             gig.isArchived = isArchived;
         await gig.save();
         res.status(200).json({ message: 'Gig Information Updated' });
