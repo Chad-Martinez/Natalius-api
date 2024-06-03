@@ -25,7 +25,7 @@ const gigSchema = new Schema<IGig>(
         },
       },
     },
-    shifts: [{ type: Schema.Types.ObjectId, ref: 'Shift' }],
+    shifts: [{ type: Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     distance: Number,
     userId: { type: Schema.Types.ObjectId, required: true },
     isArchived: { type: Boolean, default: false },
