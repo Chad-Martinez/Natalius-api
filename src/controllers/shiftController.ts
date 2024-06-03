@@ -91,7 +91,6 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
     await shift.save();
 
     const gig: HydratedDocument<IGig> | null = await Gig.findOne({ shifts: shift._id });
-    console.log('gig ', gig);
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
