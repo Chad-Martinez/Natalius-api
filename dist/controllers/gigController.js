@@ -32,10 +32,16 @@ const getGigsByUser = async (req, res, next) => {
                 $addFields: {
                     shifts: {
                         $map: {
-                            input: '$shiftDetails',
+                            input: {
+                                $sortArray: {
+                                    input: '$shiftDetails',
+                                    sortBy: { start: 1 },
+                                },
+                            },
                             as: 'shift',
                             in: {
                                 _id: '$$shift._id',
+                                gigId: '$$shift.gigId',
                                 start: '$$shift.start',
                                 end: '$$shift.end',
                                 notes: '$$shift.notes',
@@ -200,8 +206,7 @@ const updateGig = async (req, res, next) => {
         const gig = await Gig_1.default.findById(_id);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        if (name)
-            gig.name = name;
+        gig.name = name;
         if (address)
             gig.address = address;
         if (contact)

@@ -24,7 +24,7 @@ const gigSchema = new mongoose_1.Schema({
             },
         },
     },
-    shifts: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Shift' }],
+    shifts: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     distance: Number,
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
     isArchived: { type: Boolean, default: false },
