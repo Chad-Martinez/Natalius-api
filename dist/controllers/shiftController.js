@@ -71,18 +71,34 @@ const addShift = async (req, res, next) => {
 };
 exports.addShift = addShift;
 const updateShift = async (req, res, next) => {
+    var _a;
     try {
-        const { shiftId, gigId, start, end, notes } = req.body;
-        if (!(0, mongoose_1.isValidObjectId)(shiftId))
+        const { _id, gigId, start, end, notes } = req.body;
+        if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const shift = await Shift_1.default.findById(shiftId);
+        const shift = await Shift_1.default.findById(_id);
         if (!shift)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
         shift.gigId = gigId;
         shift.start = start;
         shift.end = end;
-        shift.notes = notes;
+        if (notes)
+            shift.notes = notes;
         await shift.save();
+        const gig = await Gig_1.default.findOne({ shifts: shift._id });
+        console.log('gig ', gig);
+        if (!gig)
+            throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
+        if (gigId !== gig._id) {
+            const shifts = gig.shifts;
+            gig.shifts = shifts === null || shifts === void 0 ? void 0 : shifts.filter((s) => s.toString() !== shift._id.toString());
+            await gig.save();
+            const newGig = await Gig_1.default.findById(gigId);
+            if (!newGig)
+                throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
+            (_a = newGig.shifts) === null || _a === void 0 ? void 0 : _a.push(shift._id);
+            await newGig.save();
+        }
         res.status(200).json({ message: 'Shift updated' });
     }
     catch (error) {

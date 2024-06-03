@@ -31,10 +31,16 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
         $addFields: {
           shifts: {
             $map: {
-              input: '$shiftDetails',
+              input: {
+                $sortArray: {
+                  input: '$shiftDetails',
+                  sortBy: { start: 1 },
+                },
+              },
               as: 'shift',
               in: {
                 _id: '$$shift._id',
+                gigId: '$$shift.gigId',
                 start: '$$shift.start',
                 end: '$$shift.end',
                 notes: '$$shift.notes',
@@ -204,7 +210,7 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
 
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    if (name) gig.name = name;
+    gig.name = name;
     if (address) gig.address = address;
     if (contact) gig.contact = contact;
     if (distance) gig.distance = distance;
