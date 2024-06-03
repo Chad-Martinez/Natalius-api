@@ -4,7 +4,7 @@ import Shift from '../models/Shift';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Gig from '../models/Gig';
 import { IGig } from 'src/interfaces/Gig.interface';
-import { HydratedDocument, isValidObjectId } from 'mongoose';
+import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 
 export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -75,20 +75,36 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
 
 export const updateShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { shiftId, gigId, start, end, notes } = req.body;
+    const { _id, gigId, start, end, notes } = req.body;
 
-    if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
+    const shift: HydratedDocument<IShift> | null = await Shift.findById(_id);
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
     shift.gigId = gigId;
     shift.start = start;
     shift.end = end;
-    shift.notes = notes;
+    if (notes) shift.notes = notes;
 
     await shift.save();
+
+    const gig: HydratedDocument<IGig> | null = await Gig.findOne({ shifts: shift._id });
+    console.log('gig ', gig);
+
+    if (!gig) throw new HttpErrorResponse(404, 'Requested Resource not found');
+
+    if (gigId !== gig._id) {
+      const shifts = gig.shifts as Types.ObjectId[];
+      gig.shifts = shifts?.filter((s: Types.ObjectId) => s.toString() !== shift._id.toString());
+      await gig.save();
+
+      const newGig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
+      if (!newGig) throw new HttpErrorResponse(404, 'Requested Resource not found');
+      newGig.shifts?.push(shift._id);
+      await newGig.save();
+    }
 
     res.status(200).json({ message: 'Shift updated' });
   } catch (error) {
