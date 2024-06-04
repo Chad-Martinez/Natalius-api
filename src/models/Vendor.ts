@@ -14,6 +14,7 @@ const vendorSchema = new Schema<IVendor>(
     distance: {
       type: Number,
     },
+    notes: String,
     userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },

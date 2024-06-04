@@ -39,7 +39,7 @@ export const getVendorById = async (req: Request, res: Response, next: NextFunct
 
 export const addVendor = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, defaultType, distance } = req.body;
+    const { name, defaultType, distance, notes } = req.body;
 
     const { userId } = req;
 
@@ -48,6 +48,7 @@ export const addVendor = async (req: ICustomRequest, res: Response, next: NextFu
       userId,
       defaultType,
       distance,
+      notes,
     });
     await vendor.save();
 
@@ -65,7 +66,7 @@ export const addVendor = async (req: ICustomRequest, res: Response, next: NextFu
 
 export const updateVendor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, name, defaultType } = req.body;
+    const { vendorId, name, defaultType, distance, notes } = req.body;
 
     if (!isValidObjectId(vendorId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -75,8 +76,7 @@ export const updateVendor = async (req: Request, res: Response, next: NextFuncti
 
     vendor.name = name;
     vendor.defaultType = defaultType || 'NONE';
-
-    await vendor.save();
+    (vendor.distance = distance), (vendor.notes = notes), await vendor.save();
 
     res.status(200).json({ message: 'Vendor update successful' });
   } catch (error) {
