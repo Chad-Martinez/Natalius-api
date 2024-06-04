@@ -10,6 +10,9 @@ const vendorSchema = new mongoose_1.Schema({
         type: String,
         enum: ['SERVICE', 'EQUIPMENT', 'MISC'],
     },
+    distance: {
+        type: Number,
+    },
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 vendorSchema.index({ userId: 1, name: 1 });

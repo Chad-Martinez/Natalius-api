@@ -39,12 +39,13 @@ const getVendorById = async (req, res, next) => {
 exports.getVendorById = getVendorById;
 const addVendor = async (req, res, next) => {
     try {
-        const { name, defaultType } = req.body;
+        const { name, defaultType, distance } = req.body;
         const { userId } = req;
         const vendor = new Vendor_1.default({
             name,
             userId,
             defaultType,
+            distance,
         });
         await vendor.save();
         res.status(201).json({ _id: vendor._id });
