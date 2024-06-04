@@ -44,6 +44,7 @@ const getGigsByUser = async (req, res, next) => {
                                 start: '$$shift.start',
                                 end: '$$shift.end',
                                 notes: '$$shift.notes',
+                                incomeReported: '$$shift.incomeReported',
                                 created_at: '$$shift.created_at',
                                 updated_at: '$$shift.updated_at',
                             },

@@ -15,6 +15,10 @@ const shiftSchema = new mongoose_1.Schema({
         type: Date,
         required: [true, 'End date and time required'],
     },
+    incomeReported: {
+        type: Boolean,
+        default: false,
+    },
     notes: {
         type: String,
         default: '',

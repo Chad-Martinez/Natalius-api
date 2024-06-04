@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IShift } from 'src/interfaces/Shift.interface';
+import { IShift } from '../interfaces/Shift.interface';
 
 const shiftSchema = new Schema<IShift>(
   {
@@ -15,6 +15,10 @@ const shiftSchema = new Schema<IShift>(
     end: {
       type: Date,
       required: [true, 'End date and time required'],
+    },
+    incomeReported: {
+      type: Boolean,
+      default: false,
     },
     notes: {
       type: String,
