@@ -4,6 +4,7 @@ export interface IShift {
   _id?: Types.ObjectId;
   start: Date;
   end: Date;
-  notes: String;
+  notes?: String;
+  incomeReported?: boolean;
   gigId: Types.ObjectId;
 }
