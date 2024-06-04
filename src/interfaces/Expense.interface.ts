@@ -6,6 +6,6 @@ export interface IExpense {
   date: Date;
   amount: Number;
   type: EnumType;
-  distance: Number;
+  notes: String;
   userId: Types.ObjectId;
 }

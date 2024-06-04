@@ -212,7 +212,7 @@ export const getExpenseById: RequestHandler = async (req: Request, res: Response
 
 export const addExpense: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, date, amount, type, distance } = req.body;
+    const { vendorId, date, amount, type, notes } = req.body;
 
     const { userId } = req;
 
@@ -221,7 +221,7 @@ export const addExpense: RequestHandler = async (req: ICustomRequest, res: Respo
       date,
       amount,
       type,
-      distance,
+      notes,
       userId,
     });
 
@@ -241,7 +241,7 @@ export const addExpense: RequestHandler = async (req: ICustomRequest, res: Respo
 
 export const updateExpense: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, vendorId, date, amount, type, distance } = req.body;
+    const { _id, vendorId, date, amount, type, notes } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -253,7 +253,7 @@ export const updateExpense: RequestHandler = async (req: Request, res: Response,
     expense.date = date;
     expense.amount = amount;
     expense.type = type;
-    expense.distance = distance;
+    expense.notes = notes;
 
     await expense.save();
 
