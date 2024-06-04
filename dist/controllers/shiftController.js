@@ -73,15 +73,20 @@ exports.addShift = addShift;
 const updateShift = async (req, res, next) => {
     var _a;
     try {
-        const { _id, gigId, start, end, notes } = req.body;
+        const { _id, gigId, start, end, notes, incomeReported } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const shift = await Shift_1.default.findById(_id);
         if (!shift)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
-        shift.gigId = gigId;
-        shift.start = start;
-        shift.end = end;
+        if (gigId)
+            shift.gigId = gigId;
+        if (start)
+            shift.start = start;
+        if (end)
+            shift.end = end;
+        if (incomeReported !== null || incomeReported !== undefined || incomeReported !== '')
+            shift.incomeReported = incomeReported;
         if (notes)
             shift.notes = notes;
         await shift.save();
@@ -124,8 +129,8 @@ const deleteShift = async (req, res, next) => {
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
         const filteredGigs = (_a = gig.shifts) === null || _a === void 0 ? void 0 : _a.filter((id) => id.toString() !== shiftId);
-        if (!filteredGigs || filteredGigs.length === 0) {
-            gig.shifts = null;
+        if (!filteredGigs) {
+            gig.shifts = [];
         }
         else {
             gig.shifts = filteredGigs;

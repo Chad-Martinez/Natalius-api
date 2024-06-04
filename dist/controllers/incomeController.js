@@ -8,6 +8,7 @@ const mongodb_1 = require("mongodb");
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Income_1 = __importDefault(require("../models/Income"));
+const Shift_1 = __importDefault(require("../models/Shift"));
 const getIncomeByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -156,6 +157,13 @@ const addIncome = async (req, res, next) => {
             userId,
         });
         await income.save();
+        if (shiftId) {
+            const shift = await Shift_1.default.findById(shiftId);
+            if (shift) {
+                shift.incomeReported = true;
+                await shift.save();
+            }
+        }
         res.status(201).json({ incomeId: income._id });
     }
     catch (error) {
