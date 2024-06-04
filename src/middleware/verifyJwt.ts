@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express';
 import jwt, { JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IAccessToken } from '../interfaces/AccessToken.interface';
-import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 
 const verifyJWT = (req: ICustomRequest, res: Response, next: NextFunction): Response | void => {
   try {

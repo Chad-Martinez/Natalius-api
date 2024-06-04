@@ -4,7 +4,8 @@ import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 import Income from '../models/Income';
-import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
+import Shift from '../models/Shift';
 
 export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -169,6 +170,15 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
       userId,
     });
     await income.save();
+
+    if (shiftId) {
+      const shift = await Shift.findById(shiftId);
+
+      if (shift) {
+        shift.incomeReported = true;
+        await shift.save();
+      }
+    }
 
     res.status(201).json({ incomeId: income._id });
   } catch (error) {

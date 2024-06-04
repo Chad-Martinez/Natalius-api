@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Vendor from '../models/Vendor';
 import { HydratedDocument, isValidObjectId } from 'mongoose';
-import { IVendor } from 'src/interfaces/Vendor.interface';
-import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
+import { IVendor } from '../interfaces/Vendor.interface';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 
 export const getVendorsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {

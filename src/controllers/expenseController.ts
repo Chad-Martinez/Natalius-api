@@ -2,12 +2,12 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Expense from '../models/Expense';
 import { Aggregate, HydratedDocument, PipelineStage, Types, isValidObjectId } from 'mongoose';
-import { IExpense } from 'src/interfaces/Expense.interface';
+import { IExpense } from '../interfaces/Expense.interface';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import dayjs, { Dayjs } from 'dayjs';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
-import { ExpensesByTypeAndPeriod } from 'src/types/expense-types';
+import { ExpensesByTypeAndPeriod } from '../types/expense-types';
 dayjs.extend(dayOfYear);
 dayjs.extend(quarterOfYear);
 

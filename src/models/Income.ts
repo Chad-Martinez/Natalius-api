@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IIncome, IIncomePopulated } from 'src/interfaces/Income.interface';
+import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 
 const incomeSchema = new Schema<IIncome | IIncomePopulated>(
   {
