@@ -3,7 +3,7 @@ import { IShift } from '../interfaces/Shift.interface';
 import Shift from '../models/Shift';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Gig from '../models/Gig';
-import { IGig } from 'src/interfaces/Gig.interface';
+import { IGig } from '../interfaces/Gig.interface';
 import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 
 export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -75,7 +75,7 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
 
 export const updateShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, gigId, start, end, notes } = req.body;
+    const { _id, gigId, start, end, notes, incomeReported } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -83,9 +83,10 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    shift.gigId = gigId;
-    shift.start = start;
-    shift.end = end;
+    if (gigId) shift.gigId = gigId;
+    if (start) shift.start = start;
+    if (end) shift.end = end;
+    if (incomeReported !== null || incomeReported !== undefined || incomeReported !== '') shift.incomeReported = incomeReported;
     if (notes) shift.notes = notes;
 
     await shift.save();
@@ -130,8 +131,8 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
     if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
     const filteredGigs = gig.shifts?.filter((id) => id.toString() !== shiftId);
 
-    if (!filteredGigs || filteredGigs.length === 0) {
-      gig.shifts = null;
+    if (!filteredGigs) {
+      gig.shifts = [];
     } else {
       gig.shifts = filteredGigs;
     }
