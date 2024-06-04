@@ -13,6 +13,7 @@ const vendorSchema = new mongoose_1.Schema({
     distance: {
         type: Number,
     },
+    notes: String,
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 vendorSchema.index({ userId: 1, name: 1 });

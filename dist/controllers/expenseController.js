@@ -195,14 +195,14 @@ const getExpenseById = async (req, res, next) => {
 exports.getExpenseById = getExpenseById;
 const addExpense = async (req, res, next) => {
     try {
-        const { vendorId, date, amount, type, distance } = req.body;
+        const { vendorId, date, amount, type, notes } = req.body;
         const { userId } = req;
         const expense = new Expense_1.default({
             vendorId,
             date,
             amount,
             type,
-            distance,
+            notes,
             userId,
         });
         await expense.save();
@@ -222,7 +222,7 @@ const addExpense = async (req, res, next) => {
 exports.addExpense = addExpense;
 const updateExpense = async (req, res, next) => {
     try {
-        const { _id, vendorId, date, amount, type, distance } = req.body;
+        const { _id, vendorId, date, amount, type, notes } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const expense = await Expense_1.default.findById(_id);
@@ -232,7 +232,7 @@ const updateExpense = async (req, res, next) => {
         expense.date = date;
         expense.amount = amount;
         expense.type = type;
-        expense.distance = distance;
+        expense.notes = notes;
         await expense.save();
         res.status(200).json({ message: 'Expense update successful' });
     }

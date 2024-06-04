@@ -22,10 +22,7 @@ const expenseSchema = new mongoose_1.Schema({
         required: [true, 'Expense type is required'],
         uppercase: true,
     },
-    distance: {
-        type: Number,
-        min: [1, 'Distance must be a minimum of one mile'],
-    },
+    notes: String,
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 expenseSchema.index({ userId: 1, date: 1 });

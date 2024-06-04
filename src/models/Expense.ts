@@ -23,10 +23,7 @@ const expenseSchema = new Schema<IExpense>(
       required: [true, 'Expense type is required'],
       uppercase: true,
     },
-    distance: {
-      type: Number,
-      min: [1, 'Distance must be a minimum of one mile'],
-    },
+    notes: String,
     userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
