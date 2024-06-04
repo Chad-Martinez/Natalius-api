@@ -11,6 +11,9 @@ const vendorSchema = new Schema<IVendor>(
       type: String,
       enum: ['SERVICE', 'EQUIPMENT', 'MISC'],
     },
+    distance: {
+      type: Number,
+    },
     userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },

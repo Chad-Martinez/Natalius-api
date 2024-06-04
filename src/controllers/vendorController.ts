@@ -39,7 +39,7 @@ export const getVendorById = async (req: Request, res: Response, next: NextFunct
 
 export const addVendor = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, defaultType } = req.body;
+    const { name, defaultType, distance } = req.body;
 
     const { userId } = req;
 
@@ -47,6 +47,7 @@ export const addVendor = async (req: ICustomRequest, res: Response, next: NextFu
       name,
       userId,
       defaultType,
+      distance,
     });
     await vendor.save();
 
