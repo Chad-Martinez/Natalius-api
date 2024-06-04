@@ -4,7 +4,7 @@ import { IGig } from '../interfaces/Gig.interface';
 import Gig from '../models/Gig';
 import Shift from '../models/Shift';
 import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
-import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 
 export const getGigsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -43,6 +43,7 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
                 start: '$$shift.start',
                 end: '$$shift.end',
                 notes: '$$shift.notes',
+                incomeReported: '$$shift.incomeReported',
                 created_at: '$$shift.created_at',
                 updated_at: '$$shift.updated_at',
               },
