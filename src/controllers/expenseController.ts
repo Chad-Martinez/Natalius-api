@@ -46,19 +46,55 @@ export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, 
     const count = await Expense.find({ userId }).countDocuments();
 
     if (count) {
-      const income: HydratedDocument<IExpense>[] = await Expense.find({ userId }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
-        .sort({
-          date: 1,
-        })
-        .populate({
-          path: 'vendorId',
-          select: { name: 1, defaultType: 1 },
-        })
-        .exec();
+      const expenses = await Expense.aggregate([
+        {
+          $match: {
+            userId: new Types.ObjectId(userId),
+          },
+        },
+        {
+          $sort: {
+            date: -1,
+          },
+        },
+        {
+          $skip: (+page - 1) * +limit,
+        },
+        {
+          $limit: +limit,
+        },
+        {
+          $lookup: {
+            from: 'vendors',
+            localField: 'vendorId',
+            foreignField: '_id',
+            as: 'vendorDetails',
+          },
+        },
+        {
+          $unwind: '$vendorDetails',
+        },
+        {
+          $addFields: {
+            vendor: '$vendorDetails.name',
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            vendorId: 1,
+            vendor: 1,
+            date: 1,
+            amount: 1,
+            type: 1,
+            notes: 1,
+          },
+        },
+      ]);
 
-      res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
+      res.status(200).json({ expenses, count, pages: Math.ceil(count / +limit) });
     } else {
-      res.status(200).json({ income: [], count, pages: 0 });
+      res.status(200).json({ expenses: [], count, pages: 0 });
     }
   } catch (error) {
     console.error('Expense Controller Error - PaginatedExpenses: ', error);
