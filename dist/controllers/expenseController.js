@@ -42,19 +42,55 @@ const getPaginatedExpenses = async (req, res, next) => {
         }
         const count = await Expense_1.default.find({ userId }).countDocuments();
         if (count) {
-            const income = await Expense_1.default.find({ userId }, { __v: 0 }, { skip: (+page - 1) * +limit, limit: +limit })
-                .sort({
-                date: 1,
-            })
-                .populate({
-                path: 'vendorId',
-                select: { name: 1, defaultType: 1 },
-            })
-                .exec();
-            res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
+            const expenses = await Expense_1.default.aggregate([
+                {
+                    $match: {
+                        userId: new mongoose_1.Types.ObjectId(userId),
+                    },
+                },
+                {
+                    $sort: {
+                        date: -1,
+                    },
+                },
+                {
+                    $skip: (+page - 1) * +limit,
+                },
+                {
+                    $limit: +limit,
+                },
+                {
+                    $lookup: {
+                        from: 'vendors',
+                        localField: 'vendorId',
+                        foreignField: '_id',
+                        as: 'vendorDetails',
+                    },
+                },
+                {
+                    $unwind: '$vendorDetails',
+                },
+                {
+                    $addFields: {
+                        vendor: '$vendorDetails.name',
+                    },
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        vendorId: 1,
+                        vendor: 1,
+                        date: 1,
+                        amount: 1,
+                        type: 1,
+                        notes: 1,
+                    },
+                },
+            ]);
+            res.status(200).json({ expenses, count, pages: Math.ceil(count / +limit) });
         }
         else {
-            res.status(200).json({ income: [], count, pages: 0 });
+            res.status(200).json({ expenses: [], count, pages: 0 });
         }
     }
     catch (error) {
