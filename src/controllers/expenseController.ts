@@ -315,7 +315,7 @@ export const deleteExpense: RequestHandler = async (req: Request, res: Response,
 
     await Expense.deleteOne({ _id });
 
-    res.status(200).json({ message: 'Income deleted' });
+    res.status(200).json({ message: 'Expense deleted' });
   } catch (error) {
     console.error('Expense Controller Error - DeleteExpense: ', error);
     next(error);

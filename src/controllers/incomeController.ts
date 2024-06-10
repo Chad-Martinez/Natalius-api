@@ -1,6 +1,5 @@
-import { ObjectId } from 'mongodb';
 import { Request, Response, NextFunction } from 'express';
-import { HydratedDocument, PipelineStage, isValidObjectId } from 'mongoose';
+import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 import Income from '../models/Income';
@@ -59,54 +58,72 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
       throw new HttpErrorResponse(400, 'Missing proper query parameters');
     }
 
-    const pipline: PipelineStage[] = [
-      {
-        $match: {
-          userId: new ObjectId(userId),
-        },
-      },
-      {
-        $count: 'count',
-      },
-    ];
-
-    const incomeCount = await Income.aggregate(pipline);
-    const count: number = incomeCount.length > 0 ? incomeCount[0].count : 0;
+    const count = await Income.find({ userId }).countDocuments();
 
     if (count) {
-      const income: HydratedDocument<IIncome | IIncomePopulated>[] = await Income.find(
-        { userId },
-        { __v: 0 },
-        { skip: (+page - 1) * +limit, limit: +limit },
-      )
-        .sort({
-          date: 1,
-        })
-        .populate({
-          path: 'gigId',
-          select: { name: 1 },
-        })
-        .exec();
-
-      const mappedIncome = income.map((income: HydratedDocument<IIncome | IIncomePopulated>) => {
-        const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income as HydratedDocument<IIncomePopulated>;
-        return {
-          _id,
-          gig: {
-            _id: gigId?._id,
-            name: gigId?.name,
+      const income = await Income.aggregate([
+        {
+          $match: {
+            userId: new Types.ObjectId(userId),
           },
-          shiftId,
-          date,
-          amount,
-          type,
-          userId,
-          created_at,
-          updated_at,
-        };
-      });
+        },
+        {
+          $sort: {
+            date: -1,
+          },
+        },
+        {
+          $skip: (+page - 1) * +limit,
+        },
+        {
+          $limit: +limit,
+        },
+        {
+          $lookup: {
+            from: 'gigs',
+            localField: 'gigId',
+            foreignField: '_id',
+            as: 'gigDetails',
+          },
+        },
+        {
+          $unwind: '$gigDetails',
+        },
+        {
+          $lookup: {
+            from: 'shifts',
+            localField: 'shiftId',
+            foreignField: '_id',
+            as: 'shiftDetails',
+          },
+        },
+        // {
+        //   $unwind: {
+        //     path: '$shiftDetails',
+        //     preserveNullAndEmptyArrays: true,
+        //   },
+        // },
+        {
+          $addFields: {
+            gig: '$gigDetails.name',
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            gigId: 1,
+            gig: 1,
+            shiftId: 1,
+            shiftDetails: 1,
+            date: 1,
+            amount: 1,
+            type: 1,
+            notes: 1,
+          },
+        },
+      ]);
 
-      res.status(200).json({ income: mappedIncome, count });
+      res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
     } else {
       res.status(200).json({ income: [], count });
     }
@@ -180,7 +197,7 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
       }
     }
 
-    res.status(201).json({ incomeId: income._id });
+    res.status(201).json({ incomeId: income._id, message: 'Income added' });
   } catch (error) {
     console.error('Income Controller Error - AddIncome: ', error);
     if (error.name === 'ValidationError') {
@@ -194,11 +211,11 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
 
 export const updateIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { incomeId, gigId, shiftId, date, amount, type } = req.body;
+    const { _id, gigId, shiftId, date, amount, type } = req.body;
 
-    if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const income: HydratedDocument<IIncome> | null = await Income.findById(incomeId);
+    const income: HydratedDocument<IIncome> | null = await Income.findById(_id);
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -227,6 +244,18 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
     const { incomeId } = req.params;
 
     if (!isValidObjectId(incomeId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
+    const income = await Income.findById(incomeId);
+
+    if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
+
+    if (income.shiftId) {
+      const shift = await Shift.findById(income.shiftId);
+      if (shift) {
+        shift.incomeReported = false;
+        await shift.save();
+      }
+    }
 
     await Income.deleteOne({ _id: incomeId });
 

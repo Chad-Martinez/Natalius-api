@@ -291,7 +291,7 @@ const deleteExpense = async (req, res, next) => {
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         }
         await Expense_1.default.deleteOne({ _id });
-        res.status(200).json({ message: 'Income deleted' });
+        res.status(200).json({ message: 'Expense deleted' });
     }
     catch (error) {
         console.error('Expense Controller Error - DeleteExpense: ', error);
