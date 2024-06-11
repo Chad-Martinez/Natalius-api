@@ -1,10 +1,14 @@
 import { Types } from 'mongoose';
 
-export interface IShift {
-  _id?: Types.ObjectId;
+export interface IShiftBase {
   start: Date;
   end: Date;
   notes?: String;
   incomeReported?: boolean;
   gigId: Types.ObjectId;
+  userId: Types.ObjectId;
+}
+
+export interface IShift extends IShiftBase {
+  _id: Types.ObjectId;
 }

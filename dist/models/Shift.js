@@ -23,6 +23,7 @@ const shiftSchema = new mongoose_1.Schema({
         type: String,
         default: '',
     },
+    userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 shiftSchema.index({ gigId: 1, stateDate: 1, startTime: 1 });
 exports.default = (0, mongoose_1.model)('Shift', shiftSchema);

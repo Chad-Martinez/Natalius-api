@@ -5,6 +5,7 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Gig from '../models/Gig';
 import { IGig } from '../interfaces/Gig.interface';
 import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
+import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
 export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -38,9 +39,10 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const addShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addShift = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, start, end, notes } = req.body;
+    const { userId } = req;
 
     const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
 
@@ -51,6 +53,7 @@ export const addShift = async (req: Request, res: Response, next: NextFunction):
       start,
       end,
       notes,
+      userId,
     });
 
     const savedShift: HydratedDocument<IShift> = await shift.save();

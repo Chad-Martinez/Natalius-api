@@ -41,6 +41,7 @@ exports.getShiftById = getShiftById;
 const addShift = async (req, res, next) => {
     try {
         const { gigId, start, end, notes } = req.body;
+        const { userId } = req;
         const gig = await Gig_1.default.findById(gigId);
         if (!gig)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
@@ -49,6 +50,7 @@ const addShift = async (req, res, next) => {
             start,
             end,
             notes,
+            userId,
         });
         const savedShift = await shift.save();
         if (!gig.shifts) {

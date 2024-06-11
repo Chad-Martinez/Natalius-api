@@ -33,6 +33,7 @@ const conn_1 = __importDefault(require("./db/conn"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const verifyJwt_1 = __importDefault(require("./middleware/verifyJwt"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const dashboardRoutes_1 = __importDefault(require("./routes/dashboardRoutes"));
 const gigRoutes_1 = __importDefault(require("./routes/gigRoutes"));
 const shiftRoutes_1 = __importDefault(require("./routes/shiftRoutes"));
 const incomeRoutes_1 = __importDefault(require("./routes/incomeRoutes"));
@@ -54,6 +55,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/tokens', tokenRoutes_1.default);
 app.use(verifyJwt_1.default);
+app.use('/api/dashboard', dashboardRoutes_1.default);
 app.use('/api/gigs', gigRoutes_1.default);
 app.use('/api/shifts', shiftRoutes_1.default);
 app.use('/api/income', incomeRoutes_1.default);

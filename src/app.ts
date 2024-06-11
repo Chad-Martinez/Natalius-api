@@ -5,6 +5,7 @@ import dbConnect from './db/conn';
 import cookieParser from 'cookie-parser';
 import verifyJWT from './middleware/verifyJwt';
 import authRoutes from './routes/authRoutes';
+import dashboardRoutes from './routes/dashboardRoutes';
 import gigRoutes from './routes/gigRoutes';
 import shiftRoutes from './routes/shiftRoutes';
 import incomeRoutes from './routes/incomeRoutes';
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tokens', tokenRoutes);
 
 app.use(verifyJWT);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);
