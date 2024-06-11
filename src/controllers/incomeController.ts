@@ -97,12 +97,6 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
             as: 'shiftDetails',
           },
         },
-        // {
-        //   $unwind: {
-        //     path: '$shiftDetails',
-        //     preserveNullAndEmptyArrays: true,
-        //   },
-        // },
         {
           $addFields: {
             gig: '$gigDetails.name',
