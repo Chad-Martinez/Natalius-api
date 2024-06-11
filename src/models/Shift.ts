@@ -24,6 +24,7 @@ const shiftSchema = new Schema<IShift>(
       type: String,
       default: '',
     },
+    userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
