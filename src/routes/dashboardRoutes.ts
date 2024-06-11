@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { getUpcomingShifts } from '../controllers/dashboardController';
+import { getDashboardData } from '../controllers/dashboardController';
 
 const router = Router();
 
-router.get('/upcoming-shifts', getUpcomingShifts);
+router.get('/', getDashboardData);
 
 export default router;
