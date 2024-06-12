@@ -11,6 +11,7 @@ interface IIncomeBase {
 
 export interface IIncome extends IIncomeBase {
   gigId: Types.ObjectId;
+  _id: Types.ObjectId;
 }
 
 export interface IIncomePopulated extends IIncomeBase {
