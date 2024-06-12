@@ -12,6 +12,7 @@ import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
 import expenseRoutes from './routes/expenseRoutes';
 import tokenRoutes from './routes/tokenRoutes';
+import sprintRoutes from './routes/sprintRoutes';
 import cors from 'cors';
 import { corsOptions } from './config/corsOptions';
 
@@ -39,6 +40,7 @@ app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/vendors', vendorRouters);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/sprints', sprintRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
