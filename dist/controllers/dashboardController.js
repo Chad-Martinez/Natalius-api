@@ -10,6 +10,7 @@ const Income_1 = __importDefault(require("../models/Income"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const Expense_1 = __importDefault(require("../models/Expense"));
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
+const Sprint_1 = __importDefault(require("../models/Sprint"));
 const getDashboardData = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -18,7 +19,8 @@ const getDashboardData = async (req, res, next) => {
         const upcomingShifts = await getUpcomingShifts(userId);
         const ytdIncome = await getYTDIncome(userId);
         const ytdExpenses = await getYTDExpenses(userId);
-        res.status(200).json({ upcomingShifts, ytdIncome, ytdExpenses });
+        const sprint = await getActiveSprint(userId);
+        res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses });
     }
     catch (error) {
         console.error('Dashboard Controller Error: ', error);
@@ -26,6 +28,43 @@ const getDashboardData = async (req, res, next) => {
     }
 };
 exports.getDashboardData = getDashboardData;
+const getActiveSprint = async (userId) => {
+    const sprint = await Sprint_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+                isCompleted: false,
+            },
+        },
+        {
+            $lookup: {
+                from: 'incomes',
+                localField: 'incomes',
+                foreignField: '_id',
+                as: 'incomeDetails',
+            },
+        },
+        {
+            $addFields: {
+                progress: { $sum: '$incomeDetails.amount' },
+                timeLeft: {
+                    $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
+                },
+            },
+        },
+        {
+            $project: {
+                _id: 1,
+                start: 1,
+                end: 1,
+                goal: 1,
+                progress: 1,
+                timeLeft: 1,
+            },
+        },
+    ]).exec();
+    return sprint[0];
+};
 const getUpcomingShifts = async (userId) => {
     try {
         const today = new Date();

@@ -40,6 +40,7 @@ const incomeRoutes_1 = __importDefault(require("./routes/incomeRoutes"));
 const vendorRoutes_1 = __importDefault(require("./routes/vendorRoutes"));
 const expenseRoutes_1 = __importDefault(require("./routes/expenseRoutes"));
 const tokenRoutes_1 = __importDefault(require("./routes/tokenRoutes"));
+const sprintRoutes_1 = __importDefault(require("./routes/sprintRoutes"));
 const cors_1 = __importDefault(require("cors"));
 const corsOptions_1 = require("./config/corsOptions");
 (0, conn_1.default)();
@@ -61,6 +62,7 @@ app.use('/api/shifts', shiftRoutes_1.default);
 app.use('/api/income', incomeRoutes_1.default);
 app.use('/api/vendors', vendorRoutes_1.default);
 app.use('/api/expenses', expenseRoutes_1.default);
+app.use('/api/sprints', sprintRoutes_1.default);
 app.use((error, req, res, next) => {
     console.error('Express Error Middleware: ', error);
     if (error instanceof HttpErrorResponse_1.default) {
