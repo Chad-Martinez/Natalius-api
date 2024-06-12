@@ -7,6 +7,8 @@ import Income from '../models/Income';
 import dayjs from 'dayjs';
 import Expense from '../models/Expense';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
+import { ISprint } from '../interfaces/Sprint.interface';
+import Sprint from '../models/Sprint';
 
 export const getDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -16,12 +18,51 @@ export const getDashboardData = async (req: ICustomRequest, res: Response, next:
     const upcomingShifts = await getUpcomingShifts(userId);
     const ytdIncome = await getYTDIncome(userId);
     const ytdExpenses = await getYTDExpenses(userId);
+    const sprint = await getActiveSprint(userId);
 
-    res.status(200).json({ upcomingShifts, ytdIncome, ytdExpenses });
+    res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses });
   } catch (error) {
     console.error('Dashboard Controller Error: ', error);
     next(error);
   }
+};
+
+const getActiveSprint = async (userId: string): Promise<HydratedDocument<ISprint>> => {
+  const sprint: HydratedDocument<ISprint>[] = await Sprint.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        isCompleted: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'incomes',
+        localField: 'incomes',
+        foreignField: '_id',
+        as: 'incomeDetails',
+      },
+    },
+    {
+      $addFields: {
+        progress: { $sum: '$incomeDetails.amount' },
+        timeLeft: {
+          $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        start: 1,
+        end: 1,
+        goal: 1,
+        progress: 1,
+        timeLeft: 1,
+      },
+    },
+  ]).exec();
+  return sprint[0];
 };
 
 const getUpcomingShifts = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {

@@ -8,6 +8,7 @@ const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Income_1 = __importDefault(require("../models/Income"));
 const Shift_1 = __importDefault(require("../models/Shift"));
+const Sprint_1 = __importDefault(require("../models/Sprint"));
 const getIncomeByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -181,6 +182,11 @@ const addIncome = async (req, res, next) => {
                 await shift.save();
             }
         }
+        const sprint = await Sprint_1.default.findOne({ userId: userId, isCompleted: false });
+        if (sprint) {
+            sprint.incomes.push(income._id);
+            await sprint.save();
+        }
         res.status(201).json({ incomeId: income._id, message: 'Income added' });
     }
     catch (error) {
@@ -239,6 +245,11 @@ const deleteIncome = async (req, res, next) => {
             }
         }
         await Income_1.default.deleteOne({ _id: incomeId });
+        const sprint = await Sprint_1.default.findOne({ userId: income.userId });
+        if (sprint) {
+            sprint.incomes = sprint.incomes.filter((incomeId) => incomeId !== income._id);
+            await sprint.save();
+        }
         res.status(200).json({ message: 'Income deleted' });
     }
     catch (error) {

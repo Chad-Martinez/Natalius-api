@@ -5,6 +5,8 @@ import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 import Income from '../models/Income';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Shift from '../models/Shift';
+import Sprint from '../models/Sprint';
+import { ISprint } from 'src/interfaces/Sprint.interface';
 
 export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -191,6 +193,13 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
       }
     }
 
+    const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ userId: userId, isCompleted: false });
+
+    if (sprint) {
+      sprint.incomes.push(income._id);
+      await sprint.save();
+    }
+
     res.status(201).json({ incomeId: income._id, message: 'Income added' });
   } catch (error) {
     console.error('Income Controller Error - AddIncome: ', error);
@@ -252,6 +261,13 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
     }
 
     await Income.deleteOne({ _id: incomeId });
+
+    const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ userId: income.userId });
+
+    if (sprint) {
+      sprint.incomes = sprint.incomes.filter((incomeId: Types.ObjectId) => incomeId !== income._id);
+      await sprint.save();
+    }
 
     res.status(200).json({ message: 'Income deleted' });
   } catch (error) {
