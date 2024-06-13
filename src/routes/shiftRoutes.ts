@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { addShift, deleteShift, getAllShiftsByGig, getShiftById, updateShift } from '../controllers/shiftController';
+import { addShift, deleteShift, getActiveShiftsByGig, getShiftById, updateShift } from '../controllers/shiftController';
 
 const router = Router();
 
-router.get('/gig/:gigId', getAllShiftsByGig);
+router.get('/gig/:gigId', getActiveShiftsByGig);
 
 router.get('/:shiftId', getShiftById);
 

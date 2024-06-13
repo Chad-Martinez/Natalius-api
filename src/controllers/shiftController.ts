@@ -1,19 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { IShift } from '../interfaces/Shift.interface';
-import Shift from '../models/Shift';
+import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
+import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
+import Shift from '../models/Shift';
+import { IShift } from '../interfaces/Shift.interface';
 import Gig from '../models/Gig';
 import { IGig } from '../interfaces/Gig.interface';
-import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
-import { ICustomRequest } from 'src/interfaces/CustomeRequest.interface';
 
-export const getAllShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getActiveShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId } = req.params;
 
     if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId }).sort({ start: 1 });
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId, incomeReported: false }).sort({ start: 1 });
 
     res.status(200).json(shifts);
   } catch (error) {
@@ -151,7 +151,7 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
 };
 
 export default {
-  getAllShiftsByGig,
+  getActiveShiftsByGig,
   getShiftById,
   addShift,
   updateShift,
