@@ -90,19 +90,6 @@ export const updateVendor = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// NEED TO WRITE EXPENSE API BEFORE DELETING VENDOR
-
-// export const deleteVendor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   try {
-//     const { vendorId } = req.params;
-
-//     if (!isValidObjectId(vendorId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
-
-//   } catch (error) {
-//     console.error('Vendor Controller Error - AddVendor: ', error);
-//   }
-// };
-
 export default {
   getVendorsByUser,
   getVendorById,

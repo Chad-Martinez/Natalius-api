@@ -56,7 +56,6 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
           return;
         }
 
-        // Refresh token was still valid
         const accessToken: string = jwt.sign(
           {
             userId: user._id,
