@@ -8,6 +8,5 @@ router.get('/names', gigController_1.getGigNames);
 router.get('/:gigId', gigController_1.getGigById);
 router.post('/', gigController_1.addGig);
 router.put('/', gigController_1.updateGig);
-router.delete('/:gigId', gigController_1.deleteGig);
 exports.default = router;
 //# sourceMappingURL=gigRoutes.js.map
