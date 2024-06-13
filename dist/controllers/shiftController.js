@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getActiveShiftsByGig = void 0;
+exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getShiftWidgetData = exports.getActiveShiftsByGig = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Shift_1 = __importDefault(require("../models/Shift"));
@@ -22,6 +22,55 @@ const getActiveShiftsByGig = async (req, res, next) => {
     }
 };
 exports.getActiveShiftsByGig = getActiveShiftsByGig;
+const getShiftWidgetData = async (userId) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const shifts = await Shift_1.default.aggregate([
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
+                    start: { $gte: today },
+                },
+            },
+            {
+                $sort: {
+                    start: 1,
+                },
+            },
+            {
+                $limit: 3,
+            },
+            {
+                $lookup: {
+                    from: 'gigs',
+                    localField: 'gigId',
+                    foreignField: '_id',
+                    as: 'gigDetails',
+                },
+            },
+            {
+                $unwind: '$gigDetails',
+            },
+            {
+                $project: {
+                    _id: 1,
+                    gigId: 1,
+                    gigDetails: 1,
+                    start: 1,
+                    end: 1,
+                    notes: 1,
+                    incomeReported: 1,
+                },
+            },
+        ]).exec();
+        return shifts;
+    }
+    catch (error) {
+        console.error('Get Next Three Shifts Error: ', error);
+    }
+};
+exports.getShiftWidgetData = getShiftWidgetData;
 const getShiftById = async (req, res, next) => {
     try {
         const { shiftId } = req.params;
@@ -149,6 +198,7 @@ const deleteShift = async (req, res, next) => {
 exports.deleteShift = deleteShift;
 exports.default = {
     getActiveShiftsByGig: exports.getActiveShiftsByGig,
+    getShiftWidgetData: exports.getShiftWidgetData,
     getShiftById: exports.getShiftById,
     addShift: exports.addShift,
     updateShift: exports.updateShift,

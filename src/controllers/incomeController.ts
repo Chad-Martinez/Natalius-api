@@ -9,7 +9,24 @@ import Sprint from '../models/Sprint';
 import { ISprint } from '../interfaces/Sprint.interface';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { getSprintWidgetData } from './sprintController';
+import { IncomeAverages } from 'src/types/income-types';
 dayjs.extend(isBetween);
+
+export const getIncomeDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req;
+
+    if (!userId || !isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    const sprint: ISprint = await getSprintWidgetData(userId);
+    const averages: IncomeAverages = await getIncomeAverageWidgetData(userId);
+
+    res.status(200).json({ sprint, averages });
+  } catch (error) {
+    console.error('Income Controller Error - IncomeDashboardData: ', error);
+    next(error);
+  }
+};
 
 export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -132,6 +149,27 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
   }
 };
 
+export const getYtdIncomeWidgetData = async (userId: string): Promise<number> => {
+  const ytdIncome = await Income.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        date: {
+          $gte: new Date(dayjs().startOf('year').format('MM/DD/YY')),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$amount' },
+      },
+    },
+  ]).exec();
+
+  return ytdIncome.length > 0 ? ytdIncome[0].total : 0;
+};
+
 export const getIncomeById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { incomeId } = req.params;
@@ -171,116 +209,109 @@ export const getIncomeById = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const getIncomeAverages = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { userId } = req;
-
-    const averages = await Income.aggregate([
-      {
-        $match: {
-          userId: new Types.ObjectId(userId),
-        },
+export const getIncomeAverageWidgetData = async (userId: string): Promise<IncomeAverages> => {
+  const averages: IncomeAverages[] = await Income.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
       },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: '$amount' },
-          count: { $sum: 1 },
-          firstDate: { $min: '$date' },
-          lastDate: { $max: '$date' },
-        },
+    },
+    {
+      $group: {
+        _id: null,
+        totalAmount: { $sum: '$amount' },
+        count: { $sum: 1 },
+        firstDate: { $min: '$date' },
+        lastDate: { $max: '$date' },
       },
-      {
-        $addFields: {
-          daysDiff: {
-            $dateDiff: {
-              startDate: '$firstDate',
-              endDate: '$lastDate',
-              unit: 'day',
-            },
+    },
+    {
+      $addFields: {
+        daysDiff: {
+          $dateDiff: {
+            startDate: '$firstDate',
+            endDate: '$lastDate',
+            unit: 'day',
           },
-          weeksDiff: {
-            $dateDiff: {
-              startDate: '$firstDate',
-              endDate: '$lastDate',
-              unit: 'week',
-            },
+        },
+        weeksDiff: {
+          $dateDiff: {
+            startDate: '$firstDate',
+            endDate: '$lastDate',
+            unit: 'week',
           },
-          monthsDiff: {
-            $dateDiff: {
-              startDate: '$firstDate',
-              endDate: '$lastDate',
-              unit: 'month',
-            },
+        },
+        monthsDiff: {
+          $dateDiff: {
+            startDate: '$firstDate',
+            endDate: '$lastDate',
+            unit: 'month',
           },
-          quartersDiff: {
-            $divide: [
-              {
-                $dateDiff: {
-                  startDate: '$firstDate',
-                  endDate: '$lastDate',
-                  unit: 'month',
-                },
+        },
+        quartersDiff: {
+          $divide: [
+            {
+              $dateDiff: {
+                startDate: '$firstDate',
+                endDate: '$lastDate',
+                unit: 'month',
               },
-              3,
-            ],
-          },
-          yearsDiff: {
-            $dateDiff: {
-              startDate: '$firstDate',
-              endDate: '$lastDate',
-              unit: 'year',
             },
+            3,
+          ],
+        },
+        yearsDiff: {
+          $dateDiff: {
+            startDate: '$firstDate',
+            endDate: '$lastDate',
+            unit: 'year',
           },
         },
       },
-      {
-        $project: {
-          _id: 0,
-          daily: {
-            $cond: {
-              if: { $eq: ['$daysDiff', 0] },
-              then: null,
-              else: { $round: [{ $divide: ['$totalAmount', '$daysDiff'] }, 0] },
-            },
+    },
+    {
+      $project: {
+        _id: 0,
+        daily: {
+          $cond: {
+            if: { $eq: ['$daysDiff', 0] },
+            then: null,
+            else: { $round: [{ $divide: ['$totalAmount', '$daysDiff'] }, 0] },
           },
-          weekly: {
-            $cond: {
-              if: { $eq: ['$weeksDiff', 0] },
-              then: null,
-              else: { $round: [{ $divide: ['$totalAmount', '$weeksDiff'] }, 0] },
-            },
+        },
+        weekly: {
+          $cond: {
+            if: { $eq: ['$weeksDiff', 0] },
+            then: null,
+            else: { $round: [{ $divide: ['$totalAmount', '$weeksDiff'] }, 0] },
           },
-          monthly: {
-            $cond: {
-              if: { $eq: ['$monthsDiff', 0] },
-              then: null,
-              else: { $round: [{ $divide: ['$totalAmount', '$monthsDiff'] }, 0] },
-            },
+        },
+        monthly: {
+          $cond: {
+            if: { $eq: ['$monthsDiff', 0] },
+            then: null,
+            else: { $round: [{ $divide: ['$totalAmount', '$monthsDiff'] }, 0] },
           },
-          quarterly: {
-            $cond: {
-              if: { $eq: ['$quartersDiff', 0] },
-              then: null,
-              else: { $round: [{ $divide: ['$totalAmount', '$quartersDiff'] }, 0] },
-            },
+        },
+        quarterly: {
+          $cond: {
+            if: { $eq: ['$quartersDiff', 0] },
+            then: null,
+            else: { $round: [{ $divide: ['$totalAmount', '$quartersDiff'] }, 0] },
           },
-          yearly: {
-            $cond: {
-              if: { $eq: ['$yearsDiff', 0] },
-              then: null,
-              else: { $round: [{ $divide: ['$totalAmount', '$yearsDiff'] }, 0] },
-            },
+        },
+        yearly: {
+          $cond: {
+            if: { $eq: ['$yearsDiff', 0] },
+            then: null,
+            else: { $round: [{ $divide: ['$totalAmount', '$yearsDiff'] }, 0] },
           },
         },
       },
-    ]).exec();
+    },
+  ]).exec();
 
-    res.status(200).json(averages.length > 0 ? averages[0] : []);
-  } catch (error) {
-    console.error('Income Controller Error - GetAverages: ', error);
-    next(error);
-  }
+  return averages[0];
 };
 
 export const addIncome = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -392,10 +423,12 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
 };
 
 export default {
+  getIncomeDashboardData,
   getIncomeByUser,
   getPaginatedIncome,
+  getYtdIncomeWidgetData,
   getIncomeById,
-  getIncomeAverages,
+  getIncomeAverageWidgetData,
   addIncome,
   updateIncome,
   deleteIncome,

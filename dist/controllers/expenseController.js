@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteExpense = exports.updateExpense = exports.addExpense = exports.getExpenseById = exports.getExpenseGraphData = exports.getPaginatedExpenses = exports.getExpensesByUser = void 0;
+exports.deleteExpense = exports.updateExpense = exports.addExpense = exports.getExpenseById = exports.getExpenseGraphData = exports.getYtdExpenseWidgetData = exports.getPaginatedExpenses = exports.getExpensesByUser = void 0;
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Expense_1 = __importDefault(require("../models/Expense"));
 const mongoose_1 = require("mongoose");
@@ -99,6 +99,26 @@ const getPaginatedExpenses = async (req, res, next) => {
     }
 };
 exports.getPaginatedExpenses = getPaginatedExpenses;
+const getYtdExpenseWidgetData = async (userId) => {
+    const ytdExpenses = await Expense_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+                date: {
+                    $gte: new Date((0, dayjs_1.default)().startOf('year').format('MM/DD/YY')),
+                },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$amount' },
+            },
+        },
+    ]).exec();
+    return ytdExpenses.length > 0 ? ytdExpenses[0].total : 0;
+};
+exports.getYtdExpenseWidgetData = getYtdExpenseWidgetData;
 const getExpenseGraphData = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -302,6 +322,7 @@ exports.deleteExpense = deleteExpense;
 exports.default = {
     getExpensesByUser: exports.getExpensesByUser,
     getPaginatedExpenses: exports.getPaginatedExpenses,
+    getYtdExpenseWidgetData: exports.getYtdExpenseWidgetData,
     getExpenseGraphData: exports.getExpenseGraphData,
     getExpenseById: exports.getExpenseById,
     addExpense: exports.addExpense,

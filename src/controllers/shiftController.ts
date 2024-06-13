@@ -22,6 +22,56 @@ export const getActiveShiftsByGig = async (req: Request, res: Response, next: Ne
   }
 };
 
+export const getShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const shifts: HydratedDocument<IShift>[] = await Shift.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          start: { $gte: today },
+        },
+      },
+      {
+        $sort: {
+          start: 1,
+        },
+      },
+      {
+        $limit: 3,
+      },
+      {
+        $lookup: {
+          from: 'gigs',
+          localField: 'gigId',
+          foreignField: '_id',
+          as: 'gigDetails',
+        },
+      },
+      {
+        $unwind: '$gigDetails',
+      },
+      {
+        $project: {
+          _id: 1,
+          gigId: 1,
+          gigDetails: 1,
+          start: 1,
+          end: 1,
+          notes: 1,
+          incomeReported: 1,
+        },
+      },
+    ]).exec();
+
+    return shifts;
+  } catch (error) {
+    console.error('Get Next Three Shifts Error: ', error);
+  }
+};
+
 export const getShiftById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { shiftId } = req.params;
@@ -152,6 +202,7 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
 
 export default {
   getActiveShiftsByGig,
+  getShiftWidgetData,
   getShiftById,
   addShift,
   updateShift,

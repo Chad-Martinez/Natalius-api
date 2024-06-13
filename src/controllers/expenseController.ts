@@ -102,6 +102,27 @@ export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, 
   }
 };
 
+export const getYtdExpenseWidgetData = async (userId: string): Promise<number> => {
+  const ytdExpenses = await Expense.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        date: {
+          $gte: new Date(dayjs().startOf('year').format('MM/DD/YY')),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$amount' },
+      },
+    },
+  ]).exec();
+
+  return ytdExpenses.length > 0 ? ytdExpenses[0].total : 0;
+};
+
 export const getExpenseGraphData: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
@@ -325,6 +346,7 @@ export const deleteExpense: RequestHandler = async (req: Request, res: Response,
 export default {
   getExpensesByUser,
   getPaginatedExpenses,
+  getYtdExpenseWidgetData,
   getExpenseGraphData,
   getExpenseById,
   addExpense,
