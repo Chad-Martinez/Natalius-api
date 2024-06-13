@@ -6,7 +6,10 @@ import Income from '../models/Income';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Shift from '../models/Shift';
 import Sprint from '../models/Sprint';
-import { ISprint } from 'src/interfaces/Sprint.interface';
+import { ISprint } from '../interfaces/Sprint.interface';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+dayjs.extend(isBetween);
 
 export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -195,7 +198,7 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
 
     const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ userId: userId, isCompleted: false });
 
-    if (sprint) {
+    if (sprint && dayjs(date).isBetween(sprint.start, sprint.end, null, '[]')) {
       sprint.incomes.push(income._id);
       await sprint.save();
     }
