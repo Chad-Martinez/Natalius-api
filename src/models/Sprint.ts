@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { ISprint } from 'src/interfaces/Sprint.interface';
+import { ISprint } from '../interfaces/Sprint.interface';
 
 const sprintSchema = new Schema<ISprint>(
   {

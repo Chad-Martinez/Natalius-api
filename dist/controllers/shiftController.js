@@ -3,17 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getAllShiftsByGig = void 0;
-const Shift_1 = __importDefault(require("../models/Shift"));
-const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
-const Gig_1 = __importDefault(require("../models/Gig"));
+exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getActiveShiftsByGig = void 0;
 const mongoose_1 = require("mongoose");
-const getAllShiftsByGig = async (req, res, next) => {
+const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
+const Shift_1 = __importDefault(require("../models/Shift"));
+const Gig_1 = __importDefault(require("../models/Gig"));
+const getActiveShiftsByGig = async (req, res, next) => {
     try {
         const { gigId } = req.params;
         if (!(0, mongoose_1.isValidObjectId)(gigId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const shifts = await Shift_1.default.find({ gigId: gigId }).sort({ start: 1 });
+        const shifts = await Shift_1.default.find({ gigId: gigId, incomeReported: false }).sort({ start: 1 });
         res.status(200).json(shifts);
     }
     catch (error) {
@@ -21,7 +21,7 @@ const getAllShiftsByGig = async (req, res, next) => {
         next(error);
     }
 };
-exports.getAllShiftsByGig = getAllShiftsByGig;
+exports.getActiveShiftsByGig = getActiveShiftsByGig;
 const getShiftById = async (req, res, next) => {
     try {
         const { shiftId } = req.params;
@@ -148,7 +148,7 @@ const deleteShift = async (req, res, next) => {
 };
 exports.deleteShift = deleteShift;
 exports.default = {
-    getAllShiftsByGig: exports.getAllShiftsByGig,
+    getActiveShiftsByGig: exports.getActiveShiftsByGig,
     getShiftById: exports.getShiftById,
     addShift: exports.addShift,
     updateShift: exports.updateShift,

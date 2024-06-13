@@ -9,6 +9,9 @@ const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorRespons
 const Income_1 = __importDefault(require("../models/Income"));
 const Shift_1 = __importDefault(require("../models/Shift"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
+const dayjs_1 = __importDefault(require("dayjs"));
+const isBetween_1 = __importDefault(require("dayjs/plugin/isBetween"));
+dayjs_1.default.extend(isBetween_1.default);
 const getIncomeByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -183,7 +186,7 @@ const addIncome = async (req, res, next) => {
             }
         }
         const sprint = await Sprint_1.default.findOne({ userId: userId, isCompleted: false });
-        if (sprint) {
+        if (sprint && (0, dayjs_1.default)(date).isBetween(sprint.start, sprint.end, null, '[]')) {
             sprint.incomes.push(income._id);
             await sprint.save();
         }
