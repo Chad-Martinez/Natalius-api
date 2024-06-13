@@ -171,6 +171,118 @@ export const getIncomeById = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+export const getIncomeAverages = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req;
+
+    const averages = await Income.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 },
+          firstDate: { $min: '$date' },
+          lastDate: { $max: '$date' },
+        },
+      },
+      {
+        $addFields: {
+          daysDiff: {
+            $dateDiff: {
+              startDate: '$firstDate',
+              endDate: '$lastDate',
+              unit: 'day',
+            },
+          },
+          weeksDiff: {
+            $dateDiff: {
+              startDate: '$firstDate',
+              endDate: '$lastDate',
+              unit: 'week',
+            },
+          },
+          monthsDiff: {
+            $dateDiff: {
+              startDate: '$firstDate',
+              endDate: '$lastDate',
+              unit: 'month',
+            },
+          },
+          quartersDiff: {
+            $divide: [
+              {
+                $dateDiff: {
+                  startDate: '$firstDate',
+                  endDate: '$lastDate',
+                  unit: 'month',
+                },
+              },
+              3,
+            ],
+          },
+          yearsDiff: {
+            $dateDiff: {
+              startDate: '$firstDate',
+              endDate: '$lastDate',
+              unit: 'year',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          daily: {
+            $cond: {
+              if: { $eq: ['$daysDiff', 0] },
+              then: null,
+              else: { $round: [{ $divide: ['$totalAmount', '$daysDiff'] }, 0] },
+            },
+          },
+          weekly: {
+            $cond: {
+              if: { $eq: ['$weeksDiff', 0] },
+              then: null,
+              else: { $round: [{ $divide: ['$totalAmount', '$weeksDiff'] }, 0] },
+            },
+          },
+          monthly: {
+            $cond: {
+              if: { $eq: ['$monthsDiff', 0] },
+              then: null,
+              else: { $round: [{ $divide: ['$totalAmount', '$monthsDiff'] }, 0] },
+            },
+          },
+          quarterly: {
+            $cond: {
+              if: { $eq: ['$quartersDiff', 0] },
+              then: null,
+              else: { $round: [{ $divide: ['$totalAmount', '$quartersDiff'] }, 0] },
+            },
+          },
+          yearly: {
+            $cond: {
+              if: { $eq: ['$yearsDiff', 0] },
+              then: null,
+              else: { $round: [{ $divide: ['$totalAmount', '$yearsDiff'] }, 0] },
+            },
+          },
+        },
+      },
+    ]).exec();
+
+    res.status(200).json(averages.length > 0 ? averages[0] : []);
+  } catch (error) {
+    console.error('Income Controller Error - GetAverages: ', error);
+    next(error);
+  }
+};
+
 export const addIncome = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, shiftId, date, amount, type } = req.body;
@@ -281,7 +393,9 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
 
 export default {
   getIncomeByUser,
+  getPaginatedIncome,
   getIncomeById,
+  getIncomeAverages,
   addIncome,
   updateIncome,
   deleteIncome,
