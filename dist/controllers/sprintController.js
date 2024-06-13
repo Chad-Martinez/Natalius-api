@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSprint = exports.updateSprint = exports.addSprint = exports.getActiveSprintByUser = void 0;
+exports.deleteSprint = exports.updateSprint = exports.addSprint = exports.getSprintWidgetData = exports.getActiveSprintByUser = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
@@ -23,6 +23,44 @@ const getActiveSprintByUser = async (req, res, next) => {
     }
 };
 exports.getActiveSprintByUser = getActiveSprintByUser;
+const getSprintWidgetData = async (userId) => {
+    const sprint = await Sprint_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+                isCompleted: false,
+            },
+        },
+        {
+            $lookup: {
+                from: 'incomes',
+                localField: 'incomes',
+                foreignField: '_id',
+                as: 'incomeDetails',
+            },
+        },
+        {
+            $addFields: {
+                progress: { $sum: '$incomeDetails.amount' },
+                timeLeft: {
+                    $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
+                },
+            },
+        },
+        {
+            $project: {
+                _id: 1,
+                start: 1,
+                end: 1,
+                goal: 1,
+                progress: 1,
+                timeLeft: 1,
+            },
+        },
+    ]).exec();
+    return sprint[0];
+};
+exports.getSprintWidgetData = getSprintWidgetData;
 const addSprint = async (req, res, next) => {
     try {
         const { start, goal } = req.body;
@@ -101,6 +139,7 @@ const deleteSprint = async (req, res, next) => {
 exports.deleteSprint = deleteSprint;
 exports.default = {
     getActiveSprintByUser: exports.getActiveSprintByUser,
+    getSprintWidgetData: exports.getSprintWidgetData,
     addSprint: exports.addSprint,
     updateSprint: exports.updateSprint,
     deleteSprint: exports.deleteSprint,
