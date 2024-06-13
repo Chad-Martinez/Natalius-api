@@ -23,6 +23,44 @@ export const getActiveSprintByUser = async (req: ICustomRequest, res: Response, 
   }
 };
 
+export const getSprintWidgetData = async (userId: string): Promise<HydratedDocument<ISprint>> => {
+  const sprint: HydratedDocument<ISprint>[] = await Sprint.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        isCompleted: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'incomes',
+        localField: 'incomes',
+        foreignField: '_id',
+        as: 'incomeDetails',
+      },
+    },
+    {
+      $addFields: {
+        progress: { $sum: '$incomeDetails.amount' },
+        timeLeft: {
+          $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        start: 1,
+        end: 1,
+        goal: 1,
+        progress: 1,
+        timeLeft: 1,
+      },
+    },
+  ]).exec();
+  return sprint[0];
+};
+
 export const addSprint = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { start, goal } = req.body;
@@ -109,6 +147,7 @@ export const deleteSprint = async (req: Request, res: Response, next: NextFuncti
 
 export default {
   getActiveSprintByUser,
+  getSprintWidgetData,
   addSprint,
   updateSprint,
   deleteSprint,
