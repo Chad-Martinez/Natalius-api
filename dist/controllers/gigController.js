@@ -3,10 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteGig = exports.updateGig = exports.addGig = exports.getGigById = exports.getGigNames = exports.getGigsByUser = void 0;
+exports.updateGig = exports.addGig = exports.getGigById = exports.getGigNames = exports.getGigsByUser = void 0;
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Gig_1 = __importDefault(require("../models/Gig"));
-const Shift_1 = __importDefault(require("../models/Shift"));
 const mongoose_1 = require("mongoose");
 const getGigsByUser = async (req, res, next) => {
     try {
@@ -227,33 +226,11 @@ const updateGig = async (req, res, next) => {
     }
 };
 exports.updateGig = updateGig;
-const deleteGig = async (req, res, next) => {
-    try {
-        const { gigId } = req.params;
-        if (!(0, mongoose_1.isValidObjectId)(gigId))
-            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gig = await Gig_1.default.findById(gigId);
-        await Shift_1.default.deleteMany({ gigId: gig === null || gig === void 0 ? void 0 : gig.shifts });
-        await Gig_1.default.deleteOne({ _id: gigId });
-        res.status(200).json({ message: 'Gig and all associated shift information has been deleted.' });
-    }
-    catch (error) {
-        console.error('Gig Controller Error - DeleteGig: ', error);
-        if (error instanceof HttpErrorResponse_1.default) {
-            next(error);
-        }
-        else {
-            next(error);
-        }
-    }
-};
-exports.deleteGig = deleteGig;
 exports.default = {
     getGigsByUser: exports.getGigsByUser,
     getGigNames: exports.getGigNames,
     getGigById: exports.getGigById,
     addGig: exports.addGig,
     updateGig: exports.updateGig,
-    deleteGig: exports.deleteGig,
 };
 //# sourceMappingURL=gigController.js.map
