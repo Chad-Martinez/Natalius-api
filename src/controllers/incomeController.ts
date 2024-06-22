@@ -20,8 +20,9 @@ export const getIncomeDashboardData = async (req: ICustomRequest, res: Response,
     if (!userId || !isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
     const sprint: ISprint = await getSprintWidgetData(userId);
     const averages: IncomeAverages = await getIncomeAverageWidgetData(userId);
+    const graphData = await getIncomeGraphData(userId);
 
-    res.status(200).json({ sprint, averages });
+    res.status(200).json({ sprint, averages, graphData });
   } catch (error) {
     console.error('Income Controller Error - IncomeDashboardData: ', error);
     next(error);
@@ -168,6 +169,312 @@ export const getYtdIncomeWidgetData = async (userId: string): Promise<number> =>
   ]).exec();
 
   return ytdIncome.length > 0 ? ytdIncome[0].total : 0;
+};
+
+export const getIncomeGraphData = async (userId: string) => {
+  const startOfWeek = new Date();
+  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+
+  const endOfWeek = new Date();
+  endOfWeek.setHours(23, 59, 59, 999);
+  endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const endOfMonth = new Date(startOfMonth);
+  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+  endOfMonth.setMilliseconds(-1);
+
+  const currentMonth = startOfMonth.getMonth();
+  const startOfQuarter = new Date(startOfMonth);
+  startOfQuarter.setMonth(currentMonth - (currentMonth % 3));
+
+  const endOfQuarter = new Date(startOfQuarter);
+  endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
+  endOfQuarter.setMilliseconds(-1);
+
+  const startOfYear = new Date(startOfMonth);
+  startOfYear.setMonth(0);
+
+  const endOfYear = new Date(startOfYear);
+  endOfYear.setFullYear(startOfYear.getFullYear() + 1);
+  endOfYear.setMilliseconds(-1);
+
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthsOfYear = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const incomeGraphData = await Income.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+      },
+    },
+    {
+      $facet: {
+        dailyIncomeCurrentWeek: [
+          {
+            $match: {
+              date: { $gte: startOfWeek, $lte: endOfWeek },
+            },
+          },
+          {
+            $group: {
+              _id: { $dayOfWeek: '$date' },
+              totalIncome: { $sum: '$amount' },
+            },
+          },
+          {
+            $sort: { _id: 1 },
+          },
+          {
+            $project: {
+              _id: 0,
+              day: {
+                $arrayElemAt: [daysOfWeek, { $subtract: ['$_id', 1] }],
+              },
+              totalIncome: 1,
+            },
+          },
+        ],
+        weeklyIncomeCurrentMonth: [
+          {
+            $match: {
+              date: { $gte: startOfMonth, $lte: endOfMonth },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                year: { $year: '$date' },
+                month: { $month: '$date' },
+                week: { $week: '$date' },
+              },
+              totalIncome: { $sum: '$amount' },
+            },
+          },
+          {
+            $sort: { '_id.year': 1, '_id.month': 1, '_id.week': 1 },
+          },
+          {
+            $project: {
+              _id: 0,
+              year: '$_id.year',
+              month: '$_id.month',
+              week: '$_id.week',
+              totalIncome: 1,
+            },
+          },
+        ],
+        monthlyIncomeCurrentQuarter: [
+          {
+            $match: {
+              date: { $gte: startOfQuarter, $lte: endOfQuarter },
+            },
+          },
+          {
+            $group: {
+              _id: { $month: '$date' },
+              totalIncome: { $sum: '$amount' },
+            },
+          },
+          {
+            $sort: { _id: 1 },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: {
+                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              },
+              totalIncome: 1,
+            },
+          },
+        ],
+        monthlyIncomeCurrentYear: [
+          {
+            $match: {
+              date: { $gte: startOfYear, $lte: endOfYear },
+            },
+          },
+          {
+            $group: {
+              _id: { $month: '$date' },
+              totalIncome: { $sum: '$amount' },
+            },
+          },
+          {
+            $sort: { _id: 1 },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: {
+                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              },
+              totalIncome: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        dailyIncomeCurrentWeek: {
+          $map: {
+            input: { $range: [0, 7] },
+            as: 'dayOffset',
+            in: {
+              $let: {
+                vars: {
+                  dayOfWeek: { $mod: [{ $add: ['$$dayOffset', 1] }, 7] },
+                  dayName: { $arrayElemAt: [daysOfWeek, { $mod: [{ $add: ['$$dayOffset', 1] }, 7] }] },
+                  dailyIncome: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: '$dailyIncomeCurrentWeek',
+                          as: 'dayIncome',
+                          cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [daysOfWeek, { $mod: [{ $add: ['$$dayOffset', 1] }, 7] }] }] },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
+                in: {
+                  label: '$$dayName',
+                  totalIncome: { $ifNull: ['$$dailyIncome.totalIncome', 0] },
+                },
+              },
+            },
+          },
+        },
+        weeklyIncomeCurrentMonth: {
+          $let: {
+            vars: {
+              startDate: startOfMonth,
+              endDate: endOfMonth,
+              weekNumbers: { $range: [0, { $subtract: [{ $week: endOfMonth }, { $week: startOfMonth }] }] },
+            },
+            in: {
+              $map: {
+                input: '$$weekNumbers',
+                as: 'weekOffset',
+                in: {
+                  $let: {
+                    vars: {
+                      weekStart: {
+                        $add: ['$$startDate', { $multiply: ['$$weekOffset', 604800000] }],
+                      },
+                      weekEnd: {
+                        $add: ['$$startDate', { $multiply: [{ $add: ['$$weekOffset', 1] }, 604800000] }],
+                      },
+                      weeklyIncome: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: '$weeklyIncomeCurrentMonth',
+                              as: 'weekIncome',
+                              cond: { $eq: ['$$weekIncome.week', { $week: { $add: ['$$startDate', { $multiply: ['$$weekOffset', 604800000] }] } }] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                    in: {
+                      year: { $year: '$$weekStart' },
+                      month: { $month: '$$weekStart' },
+                      // week: { $week: '$$weekStart' },
+                      label: { $concat: ['Week ', { $toString: { $add: ['$$weekOffset', 1] } }] },
+                      totalIncome: { $ifNull: ['$$weeklyIncome.totalIncome', 0] },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        monthlyIncomeCurrentQuarter: {
+          $let: {
+            vars: {
+              startMonth: startOfQuarter,
+              endMonth: endOfQuarter,
+              months: { $range: [{ $month: startOfQuarter }, { $add: [{ $month: endOfQuarter }, 1] }] },
+            },
+            in: {
+              $map: {
+                input: '$$months',
+                as: 'monthOffset',
+                in: {
+                  $let: {
+                    vars: {
+                      monthIncome: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: '$monthlyIncomeCurrentQuarter',
+                              as: 'monthIncome',
+                              cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] }] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                    in: {
+                      label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] },
+                      totalIncome: { $ifNull: ['$$monthIncome.totalIncome', 0] },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        monthlyIncomeCurrentYear: {
+          $let: {
+            vars: {
+              months: { $range: [1, 13] }, // Range from 1 to 12 for months
+            },
+            in: {
+              $map: {
+                input: '$$months',
+                as: 'month',
+                in: {
+                  $let: {
+                    vars: {
+                      monthIncome: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: '$monthlyIncomeCurrentYear',
+                              as: 'monthIncome',
+                              cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] }] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                    in: {
+                      label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] },
+                      totalIncome: { $ifNull: ['$$monthIncome.totalIncome', 0] },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]).exec();
+
+  return incomeGraphData.length > 0 ? incomeGraphData[0] : null;
 };
 
 export const getIncomeById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
