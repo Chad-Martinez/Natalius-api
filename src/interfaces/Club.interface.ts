@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { IShift } from './Shift.interface';
 
-export interface IGig extends Document {
+export interface IClub extends Document {
   name: String;
   address?: {
     street: String;

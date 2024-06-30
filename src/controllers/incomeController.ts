@@ -40,18 +40,18 @@ export const getIncomeByUser = async (req: ICustomRequest, res: Response, next: 
         date: 1,
       })
       .populate({
-        path: 'gigId',
+        path: 'clubId',
         select: { name: 1 },
       })
       .exec();
 
     const mappedIncome = income.map((income: HydratedDocument<IIncome | IIncomePopulated>) => {
-      const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income as HydratedDocument<IIncomePopulated>;
+      const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income as HydratedDocument<IIncomePopulated>;
       return {
         _id,
-        gig: {
-          _id: gigId?._id,
-          name: gigId?.name,
+        club: {
+          _id: clubId?._id,
+          name: clubId?.name,
         },
         shiftId,
         date,
@@ -103,14 +103,14 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
         },
         {
           $lookup: {
-            from: 'gigs',
-            localField: 'gigId',
+            from: 'clubs',
+            localField: 'clubId',
             foreignField: '_id',
-            as: 'gigDetails',
+            as: 'clubDetails',
           },
         },
         {
-          $unwind: '$gigDetails',
+          $unwind: '$clubDetails',
         },
         {
           $lookup: {
@@ -122,14 +122,14 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
         },
         {
           $addFields: {
-            gig: '$gigDetails.name',
+            club: '$clubDetails.name',
           },
         },
         {
           $project: {
             _id: 1,
-            gigId: 1,
-            gig: 1,
+            clubId: 1,
+            club: 1,
             shiftId: 1,
             shiftDetails: 1,
             date: 1,
@@ -485,20 +485,20 @@ export const getIncomeById = async (req: Request, res: Response, next: NextFunct
 
     const income: HydratedDocument<IIncome | IIncomePopulated> | null = (await Income.findById(incomeId)
       .populate({
-        path: 'gigId',
+        path: 'clubId',
         select: { name: 1 },
       })
       .exec()) as HydratedDocument<IIncomePopulated>;
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
+    const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
 
     const mappedIncome = {
       _id,
-      gig: {
-        _id: gigId?._id,
-        name: gigId?.name,
+      club: {
+        _id: clubId?._id,
+        name: clubId?.name,
       },
       shiftId,
       date,
@@ -623,12 +623,12 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
 
 export const addIncome = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, shiftId, date, amount, type } = req.body;
+    const { clubId, shiftId, date, amount, type } = req.body;
 
     const { userId } = req;
 
     const income = new Income({
-      gigId,
+      clubId,
       shiftId,
       date,
       amount,
@@ -667,7 +667,7 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
 
 export const updateIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, gigId, shiftId, date, amount, type } = req.body;
+    const { _id, clubId, shiftId, date, amount, type } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -675,7 +675,7 @@ export const updateIncome = async (req: Request, res: Response, next: NextFuncti
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    income.gigId = gigId;
+    income.clubId = clubId;
     income.shiftId = shiftId;
     income.date = date;
     income.amount = amount;

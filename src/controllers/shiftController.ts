@@ -4,20 +4,20 @@ import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Shift from '../models/Shift';
 import { IShift } from '../interfaces/Shift.interface';
-import Gig from '../models/Gig';
-import { IGig } from '../interfaces/Gig.interface';
+import Club from '../models/Club';
+import { IClub } from '../interfaces/Club.interface';
 
-export const getActiveShiftsByGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId } = req.params;
+    const { clubId } = req.params;
 
-    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(clubId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shifts: HydratedDocument<IShift>[] = await Shift.find({ gigId: gigId, incomeReported: false }).sort({ start: 1 });
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ clubId: clubId, incomeReported: false }).sort({ start: 1 });
 
     res.status(200).json(shifts);
   } catch (error) {
-    console.error('Shift Controller - GetShiftsByGig Error: ', error);
+    console.error('Shift Controller - GetShiftsByClub Error: ', error);
     next(error);
   }
 };
@@ -44,20 +44,20 @@ export const getShiftWidgetData = async (userId: string): Promise<HydratedDocume
       },
       {
         $lookup: {
-          from: 'gigs',
-          localField: 'gigId',
+          from: 'clubs',
+          localField: 'clubId',
           foreignField: '_id',
-          as: 'gigDetails',
+          as: 'clubDetails',
         },
       },
       {
-        $unwind: '$gigDetails',
+        $unwind: '$clubDetails',
       },
       {
         $project: {
           _id: 1,
-          gigId: 1,
-          gigDetails: 1,
+          clubId: 1,
+          clubDetails: 1,
           start: 1,
           end: 1,
           notes: 1,
@@ -91,15 +91,15 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
 
 export const addShift = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, start, end, notes } = req.body;
+    const { clubId, start, end, notes } = req.body;
     const { userId } = req;
 
-    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
+    const club: HydratedDocument<IClub> | null = await Club.findById(clubId);
 
-    if (!gig) throw new HttpErrorResponse(404, 'Requested Resource not found');
+    if (!club) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
     const shift = new Shift({
-      gigId,
+      clubId,
       start,
       end,
       notes,
@@ -108,11 +108,11 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
 
     const savedShift: HydratedDocument<IShift> = await shift.save();
 
-    if (!gig.shifts) {
-      gig.shifts = [];
+    if (!club.shifts) {
+      club.shifts = [];
     }
-    gig.shifts.push(savedShift._id);
-    gig.save();
+    club.shifts.push(savedShift._id);
+    club.save();
 
     res.status(201).json({ shiftId: shift._id });
   } catch (error) {
@@ -128,7 +128,7 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
 
 export const updateShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, gigId, start, end, notes, incomeReported } = req.body;
+    const { _id, clubId, start, end, notes, incomeReported } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -136,7 +136,7 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    if (gigId) shift.gigId = gigId;
+    if (clubId) shift.clubId = clubId;
     if (start) shift.start = start;
     if (end) shift.end = end;
     if (incomeReported !== null || incomeReported !== undefined || incomeReported !== '') shift.incomeReported = incomeReported;
@@ -144,19 +144,19 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
     await shift.save();
 
-    const gig: HydratedDocument<IGig> | null = await Gig.findOne({ shifts: shift._id });
+    const club: HydratedDocument<IClub> | null = await Club.findOne({ shifts: shift._id });
 
-    if (!gig) throw new HttpErrorResponse(404, 'Requested Resource not found');
+    if (!club) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    if (gigId !== gig._id) {
-      const shifts = gig.shifts as Types.ObjectId[];
-      gig.shifts = shifts?.filter((s: Types.ObjectId) => s.toString() !== shift._id.toString());
-      await gig.save();
+    if (clubId !== club._id) {
+      const shifts = club.shifts as Types.ObjectId[];
+      club.shifts = shifts?.filter((s: Types.ObjectId) => s.toString() !== shift._id.toString());
+      await club.save();
 
-      const newGig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
-      if (!newGig) throw new HttpErrorResponse(404, 'Requested Resource not found');
-      newGig.shifts?.push(shift._id);
-      await newGig.save();
+      const newClub: HydratedDocument<IClub> | null = await Club.findById(clubId);
+      if (!newClub) throw new HttpErrorResponse(404, 'Requested Resource not found');
+      newClub.shifts?.push(shift._id);
+      await newClub.save();
     }
 
     res.status(200).json({ message: 'Shift updated' });
@@ -173,24 +173,24 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
 export const deleteShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { shiftId, gigId } = req.body;
+    const { shiftId, clubId } = req.body;
 
-    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided Gig id is not valid');
+    if (!isValidObjectId(clubId)) throw new HttpErrorResponse(400, 'Provided Club id is not valid');
 
     if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided Shift id is not valid');
 
-    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId);
+    const club: HydratedDocument<IClub> | null = await Club.findById(clubId);
 
-    if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
-    const filteredGigs = gig.shifts?.filter((id) => id.toString() !== shiftId);
+    if (!club) throw new HttpErrorResponse(404, 'Requested resource not found');
+    const filteredClubs = club.shifts?.filter((id) => id.toString() !== shiftId);
 
-    if (!filteredGigs) {
-      gig.shifts = [];
+    if (!filteredClubs) {
+      club.shifts = [];
     } else {
-      gig.shifts = filteredGigs;
+      club.shifts = filteredClubs;
     }
 
-    await gig.save();
+    await club.save();
 
     await Shift.deleteOne({ _id: shiftId });
     res.status(200).json({ message: 'Shift deleted' });
@@ -201,7 +201,7 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
 };
 
 export default {
-  getActiveShiftsByGig,
+  getActiveShiftsByClub,
   getShiftWidgetData,
   getShiftById,
   addShift,

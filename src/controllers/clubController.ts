@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
-import { IGig } from '../interfaces/Gig.interface';
-import Gig from '../models/Gig';
+import { IClub } from '../interfaces/Club.interface';
+import Club from '../models/Club';
 import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 
-export const getGigsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getClubsByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const gigs = await Gig.aggregate([
+    const clubs = await Club.aggregate([
       {
         $match: {
           userId: new Types.ObjectId(userId),
@@ -38,7 +38,7 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
               as: 'shift',
               in: {
                 _id: '$$shift._id',
-                gigId: '$$shift.gigId',
+                clubId: '$$shift.clubId',
                 start: '$$shift.start',
                 end: '$$shift.end',
                 notes: '$$shift.notes',
@@ -130,52 +130,52 @@ export const getGigsByUser = async (req: ICustomRequest, res: Response, next: Ne
       },
     ]).exec();
 
-    res.status(200).json(gigs);
+    res.status(200).json(clubs);
   } catch (error) {
-    console.error('Gig Controller Error - GigsByUser: ', error);
+    console.error('Club Controller Error - ClubsByUser: ', error);
     next(error);
   }
 };
 
-export const getGigNames = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getClubNames = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const gigs: HydratedDocument<IGig>[] = await Gig.find({ userId }, { name: 1 });
+    const clubs: HydratedDocument<IClub>[] = await Club.find({ userId }, { name: 1 });
 
-    res.status(200).json(gigs);
+    res.status(200).json(clubs);
   } catch (error) {
-    console.error('Gig Controller Error - GigNames: ', error);
+    console.error('Club Controller Error - ClubNames: ', error);
     next(error);
   }
 };
 
-export const getGigById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getClubById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId } = req.params;
+    const { clubId } = req.params;
 
-    if (!isValidObjectId(gigId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(clubId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const gig: HydratedDocument<IGig> | null = await Gig.findById(gigId).populate('shifts').exec();
+    const club: HydratedDocument<IClub> | null = await Club.findById(clubId).populate('shifts').exec();
 
-    if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
+    if (!club) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    res.status(200).json(gig);
+    res.status(200).json(club);
   } catch (error) {
-    console.error('Gig Controller Error - GigById: ', error);
+    console.error('Club Controller Error - ClubById: ', error);
     next(error);
   }
 };
 
-export const addGig = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
+export const addClub = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { name, address, contact, distance } = req.body;
 
     const { userId } = req;
 
-    const gig = new Gig({
+    const club = new Club({
       name,
       address,
       contact,
@@ -183,11 +183,11 @@ export const addGig = async (req: ICustomRequest, res: Response, next: NextFunct
       userId,
     });
 
-    await gig.save();
+    await club.save();
 
-    res.status(201).json({ _id: gig._id });
+    res.status(201).json({ _id: club._id });
   } catch (error) {
-    console.error('Gig Controller Error - AddGig: ', error);
+    console.error('Club Controller Error - AddClub: ', error);
     if (error.name === 'ValidationError') {
       const err = new HttpErrorResponse(422, error.message);
       next(err);
@@ -197,25 +197,25 @@ export const addGig = async (req: ICustomRequest, res: Response, next: NextFunct
   }
 };
 
-export const updateGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { _id, name, address, contact, distance, isArchived } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const gig: HydratedDocument<IGig> | null = await Gig.findById(_id);
+    const club: HydratedDocument<IClub> | null = await Club.findById(_id);
 
-    if (!gig) throw new HttpErrorResponse(404, 'Requested resource not found');
-    gig.name = name;
-    if (address) gig.address = address;
-    if (contact) gig.contact = contact;
-    if (distance) gig.distance = distance;
-    if (isArchived !== null || isArchived !== undefined || isArchived !== '') gig.isArchived = isArchived;
-    await gig.save();
+    if (!club) throw new HttpErrorResponse(404, 'Requested resource not found');
+    club.name = name;
+    if (address) club.address = address;
+    if (contact) club.contact = contact;
+    if (distance) club.distance = distance;
+    if (isArchived !== null || isArchived !== undefined || isArchived !== '') club.isArchived = isArchived;
+    await club.save();
 
-    res.status(200).json({ message: 'Gig Information Updated' });
+    res.status(200).json({ message: 'Club Information Updated' });
   } catch (error) {
-    console.error('Gig Controller Error - UpdateGig: ', error);
+    console.error('Club Controller Error - UpdateClub: ', error);
     if (error.name === 'ValidationError') {
       const err = new HttpErrorResponse(422, error.message);
       next(err);
@@ -226,9 +226,9 @@ export const updateGig = async (req: Request, res: Response, next: NextFunction)
 };
 
 export default {
-  getGigsByUser,
-  getGigNames,
-  getGigById,
-  addGig,
-  updateGig,
+  getClubsByUser,
+  getClubNames,
+  getClubById,
+  addClub,
+  updateClub,
 };

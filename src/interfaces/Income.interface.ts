@@ -10,12 +10,12 @@ interface IIncomeBase {
 }
 
 export interface IIncome extends IIncomeBase {
-  gigId: Types.ObjectId;
+  clubId: Types.ObjectId;
   _id: Types.ObjectId;
 }
 
 export interface IIncomePopulated extends IIncomeBase {
-  gigId?: {
+  clubId?: {
     _id: Types.ObjectId;
     name: String;
   };
