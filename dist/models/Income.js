@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const incomeSchema = new mongoose_1.Schema({
-    gigId: {
+    clubId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        required: [true, 'Gig is required'],
-        ref: 'Gig',
+        required: [true, 'Club is required'],
+        ref: 'Club',
     },
     shiftId: {
         type: mongoose_1.Schema.Types.ObjectId,

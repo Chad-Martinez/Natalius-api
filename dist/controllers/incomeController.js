@@ -39,17 +39,17 @@ const getIncomeByUser = async (req, res, next) => {
             date: 1,
         })
             .populate({
-            path: 'gigId',
+            path: 'clubId',
             select: { name: 1 },
         })
             .exec();
         const mappedIncome = income.map((income) => {
-            const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
+            const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
             return {
                 _id,
-                gig: {
-                    _id: gigId === null || gigId === void 0 ? void 0 : gigId._id,
-                    name: gigId === null || gigId === void 0 ? void 0 : gigId.name,
+                club: {
+                    _id: clubId === null || clubId === void 0 ? void 0 : clubId._id,
+                    name: clubId === null || clubId === void 0 ? void 0 : clubId.name,
                 },
                 shiftId,
                 date,
@@ -98,14 +98,14 @@ const getPaginatedIncome = async (req, res, next) => {
                 },
                 {
                     $lookup: {
-                        from: 'gigs',
-                        localField: 'gigId',
+                        from: 'clubs',
+                        localField: 'clubId',
                         foreignField: '_id',
-                        as: 'gigDetails',
+                        as: 'clubDetails',
                     },
                 },
                 {
-                    $unwind: '$gigDetails',
+                    $unwind: '$clubDetails',
                 },
                 {
                     $lookup: {
@@ -117,14 +117,14 @@ const getPaginatedIncome = async (req, res, next) => {
                 },
                 {
                     $addFields: {
-                        gig: '$gigDetails.name',
+                        club: '$clubDetails.name',
                     },
                 },
                 {
                     $project: {
                         _id: 1,
-                        gigId: 1,
-                        gig: 1,
+                        clubId: 1,
+                        club: 1,
                         shiftId: 1,
                         shiftDetails: 1,
                         date: 1,
@@ -468,18 +468,18 @@ const getIncomeById = async (req, res, next) => {
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const income = (await Income_1.default.findById(incomeId)
             .populate({
-            path: 'gigId',
+            path: 'clubId',
             select: { name: 1 },
         })
             .exec());
         if (!income)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const { _id, gigId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
+        const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
         const mappedIncome = {
             _id,
-            gig: {
-                _id: gigId === null || gigId === void 0 ? void 0 : gigId._id,
-                name: gigId === null || gigId === void 0 ? void 0 : gigId.name,
+            club: {
+                _id: clubId === null || clubId === void 0 ? void 0 : clubId._id,
+                name: clubId === null || clubId === void 0 ? void 0 : clubId.name,
             },
             shiftId,
             date,
@@ -603,10 +603,10 @@ const getIncomeAverageWidgetData = async (userId) => {
 exports.getIncomeAverageWidgetData = getIncomeAverageWidgetData;
 const addIncome = async (req, res, next) => {
     try {
-        const { gigId, shiftId, date, amount, type } = req.body;
+        const { clubId, shiftId, date, amount, type } = req.body;
         const { userId } = req;
         const income = new Income_1.default({
-            gigId,
+            clubId,
             shiftId,
             date,
             amount,
@@ -642,13 +642,13 @@ const addIncome = async (req, res, next) => {
 exports.addIncome = addIncome;
 const updateIncome = async (req, res, next) => {
     try {
-        const { _id, gigId, shiftId, date, amount, type } = req.body;
+        const { _id, clubId, shiftId, date, amount, type } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const income = await Income_1.default.findById(_id);
         if (!income)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        income.gigId = gigId;
+        income.clubId = clubId;
         income.shiftId = shiftId;
         income.date = date;
         income.amount = amount;

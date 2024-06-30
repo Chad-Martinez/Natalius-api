@@ -6,7 +6,7 @@ const accountSchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         required: true,
     },
-    gigs: [{ type: mongoose_1.Schema.Types.ObjectId, default: [] }],
+    clubs: [{ type: mongoose_1.Schema.Types.ObjectId, default: [] }],
     income: [{ type: mongoose_1.Schema.Types.ObjectId, default: [] }],
     expenses: [{ type: mongoose_1.Schema.Types.ObjectId, default: [] }],
 });

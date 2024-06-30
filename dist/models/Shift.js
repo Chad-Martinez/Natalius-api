@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const shiftSchema = new mongoose_1.Schema({
-    gigId: {
+    clubId: {
         type: mongoose_1.Schema.Types.ObjectId,
         required: true,
-        ref: 'Gig',
+        ref: 'Club',
     },
     start: {
         type: Date,
@@ -25,6 +25,6 @@ const shiftSchema = new mongoose_1.Schema({
     },
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
-shiftSchema.index({ gigId: 1, stateDate: 1, startTime: 1 });
+shiftSchema.index({ clubId: 1, stateDate: 1, startTime: 1 });
 exports.default = (0, mongoose_1.model)('Shift', shiftSchema);
 //# sourceMappingURL=Shift.js.map

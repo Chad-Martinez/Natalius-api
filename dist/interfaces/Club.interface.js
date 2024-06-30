@@ -1,3 +1,3 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=Gig.interface.js.map
+//# sourceMappingURL=Club.interface.js.map
