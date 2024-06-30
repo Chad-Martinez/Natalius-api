@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import verifyJWT from './middleware/verifyJwt';
 import authRoutes from './routes/authRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
-import gigRoutes from './routes/gigRoutes';
+import clubRoutes from './routes/clubRoutes';
 import shiftRoutes from './routes/shiftRoutes';
 import incomeRoutes from './routes/incomeRoutes';
 import vendorRouters from './routes/vendorRoutes';
@@ -35,7 +35,7 @@ app.use('/api/tokens', tokenRoutes);
 
 app.use(verifyJWT);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/gigs', gigRoutes);
+app.use('/api/clubs', clubRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/vendors', vendorRouters);

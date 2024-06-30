@@ -3,16 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateGig = exports.addGig = exports.getGigById = exports.getGigNames = exports.getGigsByUser = void 0;
+exports.updateClub = exports.addClub = exports.getClubById = exports.getClubNames = exports.getClubsByUser = void 0;
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
-const Gig_1 = __importDefault(require("../models/Gig"));
+const Club_1 = __importDefault(require("../models/Club"));
 const mongoose_1 = require("mongoose");
-const getGigsByUser = async (req, res, next) => {
+const getClubsByUser = async (req, res, next) => {
     try {
         const { userId } = req;
         if (!(0, mongoose_1.isValidObjectId)(userId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gigs = await Gig_1.default.aggregate([
+        const clubs = await Club_1.default.aggregate([
             {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
@@ -39,7 +39,7 @@ const getGigsByUser = async (req, res, next) => {
                             as: 'shift',
                             in: {
                                 _id: '$$shift._id',
-                                gigId: '$$shift.gigId',
+                                clubId: '$$shift.clubId',
                                 start: '$$shift.start',
                                 end: '$$shift.end',
                                 notes: '$$shift.notes',
@@ -130,60 +130,60 @@ const getGigsByUser = async (req, res, next) => {
                 },
             },
         ]).exec();
-        res.status(200).json(gigs);
+        res.status(200).json(clubs);
     }
     catch (error) {
-        console.error('Gig Controller Error - GigsByUser: ', error);
+        console.error('Club Controller Error - ClubsByUser: ', error);
         next(error);
     }
 };
-exports.getGigsByUser = getGigsByUser;
-const getGigNames = async (req, res, next) => {
+exports.getClubsByUser = getClubsByUser;
+const getClubNames = async (req, res, next) => {
     try {
         const { userId } = req;
         if (!(0, mongoose_1.isValidObjectId)(userId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gigs = await Gig_1.default.find({ userId }, { name: 1 });
-        res.status(200).json(gigs);
+        const clubs = await Club_1.default.find({ userId }, { name: 1 });
+        res.status(200).json(clubs);
     }
     catch (error) {
-        console.error('Gig Controller Error - GigNames: ', error);
+        console.error('Club Controller Error - ClubNames: ', error);
         next(error);
     }
 };
-exports.getGigNames = getGigNames;
-const getGigById = async (req, res, next) => {
+exports.getClubNames = getClubNames;
+const getClubById = async (req, res, next) => {
     try {
-        const { gigId } = req.params;
-        if (!(0, mongoose_1.isValidObjectId)(gigId))
+        const { clubId } = req.params;
+        if (!(0, mongoose_1.isValidObjectId)(clubId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gig = await Gig_1.default.findById(gigId).populate('shifts').exec();
-        if (!gig)
+        const club = await Club_1.default.findById(clubId).populate('shifts').exec();
+        if (!club)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        res.status(200).json(gig);
+        res.status(200).json(club);
     }
     catch (error) {
-        console.error('Gig Controller Error - GigById: ', error);
+        console.error('Club Controller Error - ClubById: ', error);
         next(error);
     }
 };
-exports.getGigById = getGigById;
-const addGig = async (req, res, next) => {
+exports.getClubById = getClubById;
+const addClub = async (req, res, next) => {
     try {
         const { name, address, contact, distance } = req.body;
         const { userId } = req;
-        const gig = new Gig_1.default({
+        const club = new Club_1.default({
             name,
             address,
             contact,
             distance,
             userId,
         });
-        await gig.save();
-        res.status(201).json({ _id: gig._id });
+        await club.save();
+        res.status(201).json({ _id: club._id });
     }
     catch (error) {
-        console.error('Gig Controller Error - AddGig: ', error);
+        console.error('Club Controller Error - AddClub: ', error);
         if (error.name === 'ValidationError') {
             const err = new HttpErrorResponse_1.default(422, error.message);
             next(err);
@@ -193,29 +193,29 @@ const addGig = async (req, res, next) => {
         }
     }
 };
-exports.addGig = addGig;
-const updateGig = async (req, res, next) => {
+exports.addClub = addClub;
+const updateClub = async (req, res, next) => {
     try {
         const { _id, name, address, contact, distance, isArchived } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const gig = await Gig_1.default.findById(_id);
-        if (!gig)
+        const club = await Club_1.default.findById(_id);
+        if (!club)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        gig.name = name;
+        club.name = name;
         if (address)
-            gig.address = address;
+            club.address = address;
         if (contact)
-            gig.contact = contact;
+            club.contact = contact;
         if (distance)
-            gig.distance = distance;
+            club.distance = distance;
         if (isArchived !== null || isArchived !== undefined || isArchived !== '')
-            gig.isArchived = isArchived;
-        await gig.save();
-        res.status(200).json({ message: 'Gig Information Updated' });
+            club.isArchived = isArchived;
+        await club.save();
+        res.status(200).json({ message: 'Club Information Updated' });
     }
     catch (error) {
-        console.error('Gig Controller Error - UpdateGig: ', error);
+        console.error('Club Controller Error - UpdateClub: ', error);
         if (error.name === 'ValidationError') {
             const err = new HttpErrorResponse_1.default(422, error.message);
             next(err);
@@ -225,12 +225,12 @@ const updateGig = async (req, res, next) => {
         }
     }
 };
-exports.updateGig = updateGig;
+exports.updateClub = updateClub;
 exports.default = {
-    getGigsByUser: exports.getGigsByUser,
-    getGigNames: exports.getGigNames,
-    getGigById: exports.getGigById,
-    addGig: exports.addGig,
-    updateGig: exports.updateGig,
+    getClubsByUser: exports.getClubsByUser,
+    getClubNames: exports.getClubNames,
+    getClubById: exports.getClubById,
+    addClub: exports.addClub,
+    updateClub: exports.updateClub,
 };
-//# sourceMappingURL=gigController.js.map
+//# sourceMappingURL=clubController.js.map

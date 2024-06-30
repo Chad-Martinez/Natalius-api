@@ -3,10 +3,10 @@ import { IShift } from '../interfaces/Shift.interface';
 
 const shiftSchema = new Schema<IShift>(
   {
-    gigId: {
+    clubId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: 'Gig',
+      ref: 'Club',
     },
     start: {
       type: Date,
@@ -29,6 +29,6 @@ const shiftSchema = new Schema<IShift>(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-shiftSchema.index({ gigId: 1, stateDate: 1, startTime: 1 });
+shiftSchema.index({ clubId: 1, stateDate: 1, startTime: 1 });
 
 export default model<IShift>('Shift', shiftSchema);

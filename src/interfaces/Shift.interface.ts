@@ -5,7 +5,7 @@ export interface IShiftBase {
   end: Date;
   notes?: String;
   incomeReported?: boolean;
-  gigId: Types.ObjectId;
+  clubId: Types.ObjectId;
   userId: Types.ObjectId;
 }
 

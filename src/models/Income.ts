@@ -3,10 +3,10 @@ import { IIncome, IIncomePopulated } from '../interfaces/Income.interface';
 
 const incomeSchema = new Schema<IIncome | IIncomePopulated>(
   {
-    gigId: {
+    clubId: {
       type: Schema.Types.ObjectId,
-      required: [true, 'Gig is required'],
-      ref: 'Gig',
+      required: [true, 'Club is required'],
+      ref: 'Club',
     },
     shiftId: {
       type: Schema.Types.ObjectId,

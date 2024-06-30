@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
-const gigSchema = new mongoose_1.Schema({
+const clubSchema = new mongoose_1.Schema({
     name: {
         type: String,
-        required: [true, 'Gig name is required'],
+        required: [true, 'Club name is required'],
     },
     address: {
         street: String,
@@ -29,6 +29,6 @@ const gigSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
     isArchived: { type: Boolean, default: false },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
-gigSchema.index({ userId: 1 });
-exports.default = (0, mongoose_1.model)('Gig', gigSchema);
-//# sourceMappingURL=Gig.js.map
+clubSchema.index({ userId: 1 });
+exports.default = (0, mongoose_1.model)('Club', clubSchema);
+//# sourceMappingURL=Club.js.map

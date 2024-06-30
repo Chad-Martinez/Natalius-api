@@ -1,11 +1,11 @@
 import { Schema, model } from 'mongoose';
-import { IGig } from '../interfaces/Gig.interface';
+import { IClub } from '../interfaces/Club.interface';
 
-const gigSchema = new Schema<IGig>(
+const clubSchema = new Schema<IClub>(
   {
     name: {
       type: String,
-      required: [true, 'Gig name is required'],
+      required: [true, 'Club name is required'],
     },
     address: {
       street: String,
@@ -33,6 +33,6 @@ const gigSchema = new Schema<IGig>(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 
-gigSchema.index({ userId: 1 });
+clubSchema.index({ userId: 1 });
 
-export default model<IGig>('Gig', gigSchema);
+export default model<IClub>('Club', clubSchema);

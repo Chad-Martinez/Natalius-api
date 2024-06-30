@@ -5,7 +5,7 @@ const accountSchema = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
-  gigs: [{ type: Schema.Types.ObjectId, default: [] }],
+  clubs: [{ type: Schema.Types.ObjectId, default: [] }],
   income: [{ type: Schema.Types.ObjectId, default: [] }],
   expenses: [{ type: Schema.Types.ObjectId, default: [] }],
 });
