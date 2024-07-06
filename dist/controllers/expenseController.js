@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteExpense = exports.updateExpense = exports.addExpense = exports.getExpenseById = exports.getExpenseGraphData = exports.getYtdExpenseWidgetData = exports.getPaginatedExpenses = exports.getExpensesByUser = void 0;
+exports.deleteExpense = exports.updateExpense = exports.addExpense = exports.getExpenseById = exports.getYtdExpenseWidgetData = exports.getPaginatedExpenses = exports.getExpensesByUser = exports.getExpenseDashboardData = void 0;
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Expense_1 = __importDefault(require("../models/Expense"));
 const mongoose_1 = require("mongoose");
@@ -12,6 +12,21 @@ const dayOfYear_1 = __importDefault(require("dayjs/plugin/dayOfYear"));
 const quarterOfYear_1 = __importDefault(require("dayjs/plugin/quarterOfYear"));
 dayjs_1.default.extend(dayOfYear_1.default);
 dayjs_1.default.extend(quarterOfYear_1.default);
+const getExpenseDashboardData = async (req, res, next) => {
+    try {
+        const { userId } = req;
+        if (!userId || !(0, mongoose_1.isValidObjectId)(userId))
+            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
+        const graphData = await getExpenseGraphData(userId);
+        const pieData = await getExpensePieData(userId);
+        res.status(200).json({ graphData, pieData });
+    }
+    catch (error) {
+        console.error('Expense Controller Error - ExpenseDashboardData: ', error);
+        next(error);
+    }
+};
+exports.getExpenseDashboardData = getExpenseDashboardData;
 const getExpensesByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -119,117 +134,278 @@ const getYtdExpenseWidgetData = async (userId) => {
     return ytdExpenses.length > 0 ? ytdExpenses[0].total : 0;
 };
 exports.getYtdExpenseWidgetData = getYtdExpenseWidgetData;
-const getExpenseGraphData = async (req, res, next) => {
-    try {
-        const { userId } = req;
-        const { period } = req.params;
-        let queryDate;
-        switch (period) {
-            case 'week':
-                queryDate = (0, dayjs_1.default)().startOf('week');
-                break;
-            case 'month':
-                queryDate = (0, dayjs_1.default)().startOf('month');
-                break;
-            case 'quarter':
-                queryDate = (0, dayjs_1.default)().startOf('quarter');
-                break;
-            case 'year':
-                queryDate = (0, dayjs_1.default)().startOf('year');
-                break;
-            default:
-                queryDate = (0, dayjs_1.default)().startOf('week');
-                break;
-        }
-        const pipline = [
-            {
-                $match: {
-                    userId: new mongoose_1.Types.ObjectId(userId),
-                    date: {
-                        $gte: new Date(queryDate.format('MM/DD/YY')),
+const getExpensePieData = async (userId) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(startOfMonth);
+    endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+    const quarter = Math.floor((now.getMonth() + 3) / 3);
+    const startOfQuarter = new Date(now.getFullYear(), (quarter - 1) * 3, 1);
+    const endOfQuarter = new Date(startOfQuarter);
+    endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(startOfYear);
+    endOfYear.setFullYear(startOfYear.getFullYear() + 1);
+    const expensePieData = await Expense_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+            },
+        },
+        {
+            $facet: {
+                month: [
+                    {
+                        $match: {
+                            date: {
+                                $gte: startOfMonth,
+                                $lt: endOfMonth,
+                            },
+                        },
                     },
+                    {
+                        $group: {
+                            _id: '$type',
+                            value: { $sum: '$amount' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: '$_id',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+                quarter: [
+                    {
+                        $match: {
+                            date: {
+                                $gte: startOfQuarter,
+                                $lt: endOfQuarter,
+                            },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: '$type',
+                            value: { $sum: '$amount' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: '$_id',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+                year: [
+                    {
+                        $match: {
+                            date: {
+                                $gte: startOfYear,
+                                $lt: endOfYear,
+                            },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: '$type',
+                            value: { $sum: '$amount' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: '$_id',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $addFields: {
+                defaultDataSet: {
+                    $cond: [
+                        { $gt: [{ $size: { $filter: { input: '$month', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
+                        'month',
+                        {
+                            $cond: [
+                                { $gt: [{ $size: { $filter: { input: '$quarter', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
+                                'quarter',
+                                {
+                                    $cond: [{ $gt: [{ $size: { $filter: { input: '$year', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] }, 'year', 'none'],
+                                },
+                            ],
+                        },
+                    ],
                 },
             },
-        ];
-        if (period === 'week') {
-            pipline.push({
-                $project: {
-                    year: { $year: '$date' },
-                    month: { $month: '$date' },
-                    day: { $dayOfMonth: '$date' },
-                    amount: 1,
-                    type: 1,
-                },
-            }, {
-                $group: {
-                    _id: {
-                        year: '$year',
-                        month: '$month',
-                        day: '$day',
-                        type: '$type',
-                    },
-                    totalAmount: { $sum: '$amount' },
-                },
-            }, {
-                $sort: {
-                    '_id.year': 1,
-                    '_id.month': 1,
-                    '_id.day': 1,
-                    '_id.type': 1,
-                },
-            }, {
-                $project: {
-                    year: '$_id.year',
-                    month: '$_id.month',
-                    day: '$_id.day',
-                    type: '$_id.type',
-                    totalAmount: { $round: ['$totalAmount', 2] },
-                    _id: 0,
-                },
-            });
-        }
-        else {
-            pipline.push({
-                $project: {
-                    year: { $year: '$date' },
-                    month: { $month: '$date' },
-                    amount: 1,
-                    type: 1,
-                },
-            }, {
-                $group: {
-                    _id: {
-                        year: '$year',
-                        month: '$month',
-                        type: '$type',
-                    },
-                    totalAmount: { $sum: '$amount' },
-                },
-            }, {
-                $sort: {
-                    '_id.year': 1,
-                    '_id.month': 1,
-                    '_id.type': 1,
-                },
-            }, {
-                $project: {
-                    year: '$_id.year',
-                    month: '$_id.month',
-                    type: '$_id.type',
-                    totalAmount: { $round: ['$totalAmount', 2] },
-                    _id: 0,
-                },
-            });
-        }
-        const expenses = await Expense_1.default.aggregate(pipline);
-        res.status(200).json(expenses);
-    }
-    catch (error) {
-        console.error('Expense Controller Error - ExpenseGraphData: ', error);
-        next(error);
-    }
+        },
+    ]).exec();
+    return expensePieData.length > 0 ? expensePieData[0] : null;
 };
-exports.getExpenseGraphData = getExpenseGraphData;
+const getExpenseGraphData = async (userId) => {
+    const startOfWeek = new Date();
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    const endOfWeek = new Date();
+    endOfWeek.setHours(23, 59, 59, 999);
+    endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const endOfMonth = new Date(startOfMonth);
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setMilliseconds(-1);
+    const currentMonth = startOfMonth.getMonth();
+    const startOfQuarter = new Date(startOfMonth);
+    startOfQuarter.setMonth(currentMonth - (currentMonth % 3));
+    const endOfQuarter = new Date(startOfQuarter);
+    endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
+    endOfQuarter.setMilliseconds(-1);
+    const startOfYear = new Date(startOfMonth);
+    startOfYear.setMonth(0);
+    const endOfYear = new Date(startOfYear);
+    endOfYear.setFullYear(startOfYear.getFullYear() + 1);
+    endOfYear.setMilliseconds(-1);
+    const monthsOfYear = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const expenseGraphData = await Expense_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+            },
+        },
+        {
+            $facet: {
+                weeklyExpenseCurrentMonth: [
+                    {
+                        $match: {
+                            date: { $gte: startOfMonth, $lte: endOfMonth },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                week: { $week: '$date' },
+                                type: '$type',
+                            },
+                            totalExpense: { $sum: '$amount' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.week': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.week',
+                            types: {
+                                $push: {
+                                    type: '$_id.type',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            week: { $concat: ['Week ', { $toString: '$_id' }] },
+                            types: 1,
+                        },
+                    },
+                ],
+                monthExpenseCurrentQuarter: [
+                    {
+                        $match: {
+                            date: { $gte: startOfQuarter, $lte: endOfQuarter },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                month: { $month: '$date' },
+                                type: '$type',
+                            },
+                            totalExpense: { $sum: '$amount' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.month': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.month',
+                            types: {
+                                $push: {
+                                    type: '$_id.type',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            month: {
+                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+                            },
+                            types: 1,
+                        },
+                    },
+                ],
+                monthlyExpenseCurrentYear: [
+                    {
+                        $match: {
+                            date: { $gte: startOfYear, $lte: endOfYear },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                month: { $month: '$date' },
+                                type: '$type',
+                            },
+                            totalExpense: { $sum: '$amount' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.month': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.month',
+                            types: {
+                                $push: {
+                                    type: '$_id.type',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            month: {
+                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+                            },
+                            types: 1,
+                        },
+                    },
+                ],
+            },
+        },
+    ]).exec();
+    return expenseGraphData.length > 0 ? expenseGraphData[0] : null;
+};
 const getExpenseById = async (req, res, next) => {
     try {
         const { _id } = req.params;
@@ -320,10 +496,11 @@ const deleteExpense = async (req, res, next) => {
 };
 exports.deleteExpense = deleteExpense;
 exports.default = {
+    getExpenseDashboardData: exports.getExpenseDashboardData,
     getExpensesByUser: exports.getExpensesByUser,
     getPaginatedExpenses: exports.getPaginatedExpenses,
     getYtdExpenseWidgetData: exports.getYtdExpenseWidgetData,
-    getExpenseGraphData: exports.getExpenseGraphData,
+    getExpenseGraphData,
     getExpenseById: exports.getExpenseById,
     addExpense: exports.addExpense,
     updateExpense: exports.updateExpense,
