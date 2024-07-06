@@ -10,7 +10,7 @@ import { ISprint } from '../interfaces/Sprint.interface';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { getSprintWidgetData } from './sprintController';
-import { IncomeAverages } from 'src/types/income-types';
+import { IncomeAverages } from '../types/income-types';
 dayjs.extend(isBetween);
 
 export const getIncomeDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -214,7 +214,7 @@ export const getIncomeGraphData = async (userId: string) => {
     },
     {
       $facet: {
-        dailyIncomeCurrentWeek: [
+        week: [
           {
             $match: {
               date: { $gte: startOfWeek, $lte: endOfWeek },
@@ -223,7 +223,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $dayOfWeek: '$date' },
-              totalIncome: { $sum: '$amount' },
+              total: { $sum: '$amount' },
             },
           },
           {
@@ -235,11 +235,11 @@ export const getIncomeGraphData = async (userId: string) => {
               day: {
                 $arrayElemAt: [daysOfWeek, { $subtract: ['$_id', 1] }],
               },
-              totalIncome: 1,
+              total: 1,
             },
           },
         ],
-        weeklyIncomeCurrentMonth: [
+        month: [
           {
             $match: {
               date: { $gte: startOfMonth, $lte: endOfMonth },
@@ -252,7 +252,7 @@ export const getIncomeGraphData = async (userId: string) => {
                 month: { $month: '$date' },
                 week: { $week: '$date' },
               },
-              totalIncome: { $sum: '$amount' },
+              total: { $sum: '$amount' },
             },
           },
           {
@@ -264,11 +264,11 @@ export const getIncomeGraphData = async (userId: string) => {
               year: '$_id.year',
               month: '$_id.month',
               week: '$_id.week',
-              totalIncome: 1,
+              total: 1,
             },
           },
         ],
-        monthlyIncomeCurrentQuarter: [
+        quarter: [
           {
             $match: {
               date: { $gte: startOfQuarter, $lte: endOfQuarter },
@@ -277,7 +277,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $month: '$date' },
-              totalIncome: { $sum: '$amount' },
+              total: { $sum: '$amount' },
             },
           },
           {
@@ -289,11 +289,11 @@ export const getIncomeGraphData = async (userId: string) => {
               month: {
                 $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
               },
-              totalIncome: 1,
+              total: 1,
             },
           },
         ],
-        monthlyIncomeCurrentYear: [
+        year: [
           {
             $match: {
               date: { $gte: startOfYear, $lte: endOfYear },
@@ -302,7 +302,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $month: '$date' },
-              totalIncome: { $sum: '$amount' },
+              total: { $sum: '$amount' },
             },
           },
           {
@@ -314,7 +314,7 @@ export const getIncomeGraphData = async (userId: string) => {
               month: {
                 $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
               },
-              totalIncome: 1,
+              total: 1,
             },
           },
         ],
@@ -322,7 +322,7 @@ export const getIncomeGraphData = async (userId: string) => {
     },
     {
       $addFields: {
-        dailyIncomeCurrentWeek: {
+        week: {
           $map: {
             input: { $range: [0, 7] },
             as: 'dayOffset',
@@ -335,7 +335,7 @@ export const getIncomeGraphData = async (userId: string) => {
                     $arrayElemAt: [
                       {
                         $filter: {
-                          input: '$dailyIncomeCurrentWeek',
+                          input: '$week',
                           as: 'dayIncome',
                           cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [daysOfWeek, { $mod: [{ $add: ['$$dayOffset', 1] }, 7] }] }] },
                         },
@@ -346,13 +346,13 @@ export const getIncomeGraphData = async (userId: string) => {
                 },
                 in: {
                   label: '$$dayName',
-                  totalIncome: { $ifNull: ['$$dailyIncome.totalIncome', 0] },
+                  total: { $ifNull: ['$$dailyIncome.total', 0] },
                 },
               },
             },
           },
         },
-        weeklyIncomeCurrentMonth: {
+        month: {
           $let: {
             vars: {
               startDate: startOfMonth,
@@ -376,7 +376,7 @@ export const getIncomeGraphData = async (userId: string) => {
                         $arrayElemAt: [
                           {
                             $filter: {
-                              input: '$weeklyIncomeCurrentMonth',
+                              input: '$month',
                               as: 'weekIncome',
                               cond: { $eq: ['$$weekIncome.week', { $week: { $add: ['$$startDate', { $multiply: ['$$weekOffset', 604800000] }] } }] },
                             },
@@ -388,9 +388,8 @@ export const getIncomeGraphData = async (userId: string) => {
                     in: {
                       year: { $year: '$$weekStart' },
                       month: { $month: '$$weekStart' },
-                      // week: { $week: '$$weekStart' },
                       label: { $concat: ['Week ', { $toString: { $add: ['$$weekOffset', 1] } }] },
-                      totalIncome: { $ifNull: ['$$weeklyIncome.totalIncome', 0] },
+                      total: { $ifNull: ['$$weeklyIncome.total', 0] },
                     },
                   },
                 },
@@ -398,7 +397,7 @@ export const getIncomeGraphData = async (userId: string) => {
             },
           },
         },
-        monthlyIncomeCurrentQuarter: {
+        quarter: {
           $let: {
             vars: {
               startMonth: startOfQuarter,
@@ -416,7 +415,7 @@ export const getIncomeGraphData = async (userId: string) => {
                         $arrayElemAt: [
                           {
                             $filter: {
-                              input: '$monthlyIncomeCurrentQuarter',
+                              input: '$quarter',
                               as: 'monthIncome',
                               cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] }] },
                             },
@@ -427,7 +426,7 @@ export const getIncomeGraphData = async (userId: string) => {
                     },
                     in: {
                       label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] },
-                      totalIncome: { $ifNull: ['$$monthIncome.totalIncome', 0] },
+                      total: { $ifNull: ['$$monthIncome.total', 0] },
                     },
                   },
                 },
@@ -435,10 +434,10 @@ export const getIncomeGraphData = async (userId: string) => {
             },
           },
         },
-        monthlyIncomeCurrentYear: {
+        year: {
           $let: {
             vars: {
-              months: { $range: [1, 13] }, // Range from 1 to 12 for months
+              months: { $range: [1, 13] },
             },
             in: {
               $map: {
@@ -451,7 +450,7 @@ export const getIncomeGraphData = async (userId: string) => {
                         $arrayElemAt: [
                           {
                             $filter: {
-                              input: '$monthlyIncomeCurrentYear',
+                              input: '$year',
                               as: 'monthIncome',
                               cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] }] },
                             },
@@ -462,8 +461,38 @@ export const getIncomeGraphData = async (userId: string) => {
                     },
                     in: {
                       label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] },
-                      totalIncome: { $ifNull: ['$$monthIncome.totalIncome', 0] },
+                      total: { $ifNull: ['$$monthIncome.total', 0] },
                     },
+                  },
+                },
+              },
+            },
+          },
+        },
+        defaultDataSet: {
+          $let: {
+            vars: {
+              datasets: [
+                { name: 'week', data: '$week' },
+                { name: 'month', data: '$month' },
+                { name: 'quarter', data: '$quarter' },
+                { name: 'year', data: '$year' },
+              ],
+            },
+            in: {
+              $reduce: {
+                input: '$$datasets',
+                initialValue: null,
+                in: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $eq: ['$$value', null] },
+                        { $gt: [{ $size: { $filter: { input: '$$this.data', as: 'data', cond: { $gt: ['$$data.total', 0] } } } }, 0] },
+                      ],
+                    },
+                    then: '$$this.name',
+                    else: '$$value',
                   },
                 },
               },
