@@ -3,7 +3,7 @@ import {
   addExpense,
   deleteExpense,
   getExpenseById,
-  getExpenseGraphData,
+  getExpenseDashboardData,
   getExpensesByUser,
   getPaginatedExpenses,
   updateExpense,
@@ -15,7 +15,7 @@ router.get('/', getExpensesByUser);
 
 router.get('/paginate', getPaginatedExpenses);
 
-router.get('/graphs/:period', getExpenseGraphData);
+router.get('/dashboard', getExpenseDashboardData);
 
 router.get('/:_id', getExpenseById);
 
