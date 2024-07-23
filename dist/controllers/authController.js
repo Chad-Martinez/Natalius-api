@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmail = exports.logout = exports.login = exports.register = void 0;
+exports.verifyEmail = exports.resetPassword = exports.passwordResetEmail = exports.logout = exports.login = exports.register = void 0;
 const nodemailer_1 = require("nodemailer");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
@@ -147,6 +147,82 @@ const logout = async (req, res, next) => {
     }
 };
 exports.logout = logout;
+const passwordResetEmail = async (req, res, next) => {
+    const { email } = req.body;
+    try {
+        const user = await User_1.default.findOne({ email: email });
+        if (!user)
+            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
+        const transporter = (0, nodemailer_1.createTransport)({
+            service: 'iCloud',
+            auth: {
+                user: process.env.ICLOUD_USER,
+                pass: process.env.ICLOUD_PW,
+            },
+        });
+        const token = jsonwebtoken_1.default.sign({
+            email: user.email,
+        }, process.env.JWT_SECRET);
+        const options = {
+            viewEngine: {
+                extname: '.hbs',
+                layoutsDir: 'src/views/email/',
+                defaultLayout: 'passwordReset',
+                partialsDir: 'src/views/email/',
+            },
+            viewPath: 'src/views/email',
+            extName: '.hbs',
+        };
+        transporter.use('compile', (0, nodemailer_express_handlebars_1.default)(options));
+        const mail = {
+            from: process.env.SENDER_EMAIL,
+            to: email,
+            subject: 'Natalius - Password Reset Request',
+            template: 'passwordReset',
+            context: {
+                name: `${user.firstName} ${user.lastName}`,
+                link: `${process.env.WEBSITE_URL}/password-reset/${token}`,
+            },
+        };
+        res.status(200).json({ message: 'A link to reset your password has been emailed' });
+        await transporter.sendMail(mail);
+    }
+    catch (error) {
+        console.error('Auth Controller Error - PasswordResetEmail: ', error);
+        if (error.name === 'ValidationError') {
+            const err = new HttpErrorResponse_1.default(422, error.message);
+            next(err);
+        }
+        else {
+            next(error);
+        }
+    }
+};
+exports.passwordResetEmail = passwordResetEmail;
+const resetPassword = async (req, res, next) => {
+    const { token, password } = req.body;
+    try {
+        const decodedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        const user = await User_1.default.findOne({ email: decodedToken.email });
+        if (!user)
+            throw new HttpErrorResponse_1.default(404, 'A user with this email could not be found');
+        const hashedPw = await new Promise((resolve, reject) => bcryptjs_1.default.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
+        user.hashedPw = hashedPw;
+        await user.save();
+        res.status(200).json({ message: 'Password reset complete. Please login' });
+    }
+    catch (error) {
+        console.error('Auth Controller Error - Password Reset: ', error);
+        if (error.name === 'ValidationError') {
+            const err = new HttpErrorResponse_1.default(422, error.message);
+            next(err);
+        }
+        else {
+            next(error);
+        }
+    }
+};
+exports.resetPassword = resetPassword;
 const verifyEmail = async (req, res, next) => {
     try {
         const { token } = req.params;
@@ -168,6 +244,8 @@ exports.verifyEmail = verifyEmail;
 exports.default = {
     register: exports.register,
     login: exports.login,
+    passwordResetEmail: exports.passwordResetEmail,
+    resetPassword: exports.resetPassword,
     logout: exports.logout,
     verifyEmail: exports.verifyEmail,
 };

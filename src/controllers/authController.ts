@@ -9,6 +9,7 @@ import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import Account from '../models/Account';
 import { HydratedDocument } from 'mongoose';
+import { IEmailToken } from 'src/interfaces/EmailToken.interface';
 
 export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { firstName, lastName, email, password } = req.body;
@@ -170,6 +171,93 @@ export const logout: RequestHandler = async (req: Request, res: Response, next: 
   }
 };
 
+export const passwordResetEmail: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { email } = req.body;
+  try {
+    const user: HydratedDocument<IUser> | null = await User.findOne({ email: email });
+
+    if (!user) throw new HttpErrorResponse(404, 'Requested resource not found');
+
+    const transporter: Transporter = createTransport({
+      service: 'iCloud',
+      auth: {
+        user: process.env.ICLOUD_USER,
+        pass: process.env.ICLOUD_PW,
+      },
+    });
+
+    const token: string = jwt.sign(
+      {
+        email: user.email,
+      },
+      process.env.JWT_SECRET!,
+    );
+
+    const options: NodemailerExpressHandlebarsOptions = {
+      viewEngine: {
+        extname: '.hbs',
+        layoutsDir: 'src/views/email/',
+        defaultLayout: 'passwordReset',
+        partialsDir: 'src/views/email/',
+      },
+      viewPath: 'src/views/email',
+      extName: '.hbs',
+    };
+
+    transporter.use('compile', hbs(options));
+
+    const mail = {
+      from: process.env.SENDER_EMAIL,
+      to: email,
+      subject: 'Natalius - Password Reset Request',
+      template: 'passwordReset',
+      context: {
+        name: `${user.firstName} ${user.lastName}`,
+        link: `${process.env.WEBSITE_URL}/password-reset/${token}`,
+      },
+    };
+
+    res.status(200).json({ message: 'A link to reset your password has been emailed' });
+
+    await transporter.sendMail(mail);
+  } catch (error) {
+    console.error('Auth Controller Error - PasswordResetEmail: ', error);
+    if (error.name === 'ValidationError') {
+      const err = new HttpErrorResponse(422, error.message);
+      next(err);
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const resetPassword: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { token, password } = req.body;
+  try {
+    const decodedToken: JwtPayload | string = jwt.verify(token, process.env.JWT_SECRET!) as IEmailToken;
+
+    const user: HydratedDocument<IUser> | null = await User.findOne({ email: decodedToken.email });
+
+    if (!user) throw new HttpErrorResponse(404, 'A user with this email could not be found');
+
+    const hashedPw: string = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
+
+    user.hashedPw = hashedPw;
+
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset complete. Please login' });
+  } catch (error) {
+    console.error('Auth Controller Error - Password Reset: ', error);
+    if (error.name === 'ValidationError') {
+      const err = new HttpErrorResponse(422, error.message);
+      next(err);
+    } else {
+      next(error);
+    }
+  }
+};
+
 export const verifyEmail: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { token } = req.params;
@@ -192,6 +280,8 @@ export const verifyEmail: RequestHandler = async (req: Request, res: Response, n
 export default {
   register,
   login,
+  passwordResetEmail,
+  resetPassword,
   logout,
   verifyEmail,
 };
