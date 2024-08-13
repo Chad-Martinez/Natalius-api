@@ -20,6 +20,13 @@ const sprintSchema = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    goalMet: {
+        type: Boolean,
+        default: false,
+    },
+    total: {
+        type: Number,
+    },
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
 }, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 sprintSchema.index({ userId: 1, isCompleted: 1 });
