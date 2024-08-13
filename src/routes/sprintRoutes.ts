@@ -1,11 +1,13 @@
 import { Router } from 'express';
-import { addSprint, deleteSprint, getActiveSprintByUser, updateSprint } from '../controllers/sprintController';
+import { addSprint, deleteSprint, getActiveSprintByUser, markSprintComplete, updateSprint } from '../controllers/sprintController';
 
 const router = Router();
 
 router.get('/', getActiveSprintByUser);
 
 router.post('/', addSprint);
+
+router.post('/complete-sprint', markSprintComplete);
 
 router.put('/', updateSprint);
 
