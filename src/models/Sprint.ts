@@ -21,6 +21,13 @@ const sprintSchema = new Schema<ISprint>(
       type: Boolean,
       default: false,
     },
+    goalMet: {
+      type: Boolean,
+      default: false,
+    },
+    total: {
+      type: Number,
+    },
     userId: { type: Schema.Types.ObjectId, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },

@@ -6,6 +6,8 @@ export interface ISprintBase {
   goal: Number;
   incomes: Types.ObjectId[];
   isCompleted: Boolean;
+  goalMet: Boolean;
+  total: Number;
   userId: Types.ObjectId;
 }
 

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSprint = exports.updateSprint = exports.addSprint = exports.getSprintWidgetData = exports.getActiveSprintByUser = void 0;
+exports.deleteSprint = exports.markSprintComplete = exports.updateSprint = exports.addSprint = exports.getSprintWidgetData = exports.getActiveSprintByUser = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
@@ -123,6 +123,31 @@ const updateSprint = async (req, res, next) => {
     }
 };
 exports.updateSprint = updateSprint;
+const markSprintComplete = async (req, res, next) => {
+    try {
+        const { _id, goal, progress } = req.body;
+        if (!(0, mongoose_1.isValidObjectId)(_id))
+            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
+        const sprint = await Sprint_1.default.findById(_id);
+        if (!sprint)
+            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
+        sprint.isCompleted = true;
+        sprint.goalMet = goal > progress ? false : true;
+        await sprint.save();
+        res.status(200).json({ message: 'Sprint Completed', goalMet: sprint.goalMet });
+    }
+    catch (error) {
+        console.error('Sprint Controller Error - UpdateSprint: ', error);
+        if (error.name === 'ValidationError') {
+            const err = new HttpErrorResponse_1.default(422, error.message);
+            next(err);
+        }
+        else {
+            next(error);
+        }
+    }
+};
+exports.markSprintComplete = markSprintComplete;
 const deleteSprint = async (req, res, next) => {
     try {
         const { sprintId } = req.params;
