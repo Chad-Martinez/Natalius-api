@@ -130,6 +130,33 @@ export const updateSprint = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+export const markSprintComplete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { _id, goal, progress } = req.body;
+
+    if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+
+    const sprint: HydratedDocument<ISprint> | null = await Sprint.findById(_id);
+
+    if (!sprint) throw new HttpErrorResponse(404, 'Requested resource not found');
+
+    sprint.isCompleted = true;
+    sprint.goalMet = goal > progress ? false : true;
+
+    await sprint.save();
+
+    res.status(200).json({ message: 'Sprint Completed', goalMet: sprint.goalMet });
+  } catch (error) {
+    console.error('Sprint Controller Error - UpdateSprint: ', error);
+    if (error.name === 'ValidationError') {
+      const err = new HttpErrorResponse(422, error.message);
+      next(err);
+    } else {
+      next(error);
+    }
+  }
+};
+
 export const deleteSprint = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { sprintId } = req.params;
