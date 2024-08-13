@@ -27,10 +27,11 @@ const updateUserInfo = async (req, res, next) => {
         const user = await User_1.default.findById(userId);
         if (!user)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const { firstName, lastName, email } = req.body;
-        user.firstName = firstName;
-        user.lastName = lastName;
-        user.email = email;
+        delete req.body._id;
+        const updates = Object.keys(req.body);
+        updates.forEach((update) => {
+            user[update] = req.body[update];
+        });
         await user.save();
         res.status(200).json({ message: 'Profile updated' });
     }

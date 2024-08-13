@@ -58,7 +58,7 @@ app.use('/api/auth', authRoutes_1.default);
 app.use('/api/tokens', tokenRoutes_1.default);
 app.use(verifyJwt_1.default);
 app.use('/api/dashboard', dashboardRoutes_1.default);
-app.use('/api/profile', profileRoutes_1.default);
+app.use('/api/profiles', profileRoutes_1.default);
 app.use('/api/clubs', clubRoutes_1.default);
 app.use('/api/shifts', shiftRoutes_1.default);
 app.use('/api/income', incomeRoutes_1.default);

@@ -124,22 +124,17 @@ exports.addShift = addShift;
 const updateShift = async (req, res, next) => {
     var _a;
     try {
-        const { _id, clubId, start, end, notes, incomeReported } = req.body;
+        const { _id, clubId } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const shift = await Shift_1.default.findById(_id);
         if (!shift)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
-        if (clubId)
-            shift.clubId = clubId;
-        if (start)
-            shift.start = start;
-        if (end)
-            shift.end = end;
-        if (incomeReported !== null || incomeReported !== undefined || incomeReported !== '')
-            shift.incomeReported = incomeReported;
-        if (notes)
-            shift.notes = notes;
+        delete req.body._id;
+        const updates = Object.keys(req.body);
+        updates.forEach((update) => {
+            shift[update] = req.body[update];
+        });
         await shift.save();
         const club = await Club_1.default.findOne({ shifts: shift._id });
         if (!club)
