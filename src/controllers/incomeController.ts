@@ -695,20 +695,24 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
 };
 
 export const updateIncome = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { _id, clubId, shiftId, date, amount, type } = req.body;
+  const { _id } = req.body;
 
+  try {
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const income: HydratedDocument<IIncome> | null = await Income.findById(_id);
 
     if (!income) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    income.clubId = clubId;
-    income.shiftId = shiftId;
-    income.date = date;
-    income.amount = amount;
-    income.type = type;
+    delete req.body._id;
+
+    const updates = Object.keys(req.body);
+    console.log(updates);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      income[update] = req.body[update];
+    });
 
     await income.save();
 

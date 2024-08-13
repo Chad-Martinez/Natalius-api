@@ -66,17 +66,24 @@ export const addVendor = async (req: ICustomRequest, res: Response, next: NextFu
 
 export const updateVendor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, name, defaultType, distance, notes } = req.body;
+    const { _id } = req.body;
 
-    if (!isValidObjectId(vendorId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
+    if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const vendor: HydratedDocument<IVendor> | null = await Vendor.findById(vendorId);
+    const vendor: HydratedDocument<IVendor> | null = await Vendor.findById(_id);
 
     if (!vendor) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    vendor.name = name;
-    vendor.defaultType = defaultType || 'NONE';
-    (vendor.distance = distance), (vendor.notes = notes), await vendor.save();
+    delete req.body._id;
+
+    const updates = Object.keys(req.body);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      vendor[update] = req.body[update];
+    });
+
+    await vendor.save();
 
     res.status(200).json({ message: 'Vendor update successful' });
   } catch (error) {
