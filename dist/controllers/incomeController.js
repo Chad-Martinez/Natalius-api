@@ -671,18 +671,19 @@ const addIncome = async (req, res, next) => {
 };
 exports.addIncome = addIncome;
 const updateIncome = async (req, res, next) => {
+    const { _id } = req.body;
     try {
-        const { _id, clubId, shiftId, date, amount, type } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const income = await Income_1.default.findById(_id);
         if (!income)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        income.clubId = clubId;
-        income.shiftId = shiftId;
-        income.date = date;
-        income.amount = amount;
-        income.type = type;
+        delete req.body._id;
+        const updates = Object.keys(req.body);
+        console.log(updates);
+        updates.forEach((update) => {
+            income[update] = req.body[update];
+        });
         await income.save();
         res.status(200).json({ message: 'Income updated' });
     }

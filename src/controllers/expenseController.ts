@@ -481,7 +481,7 @@ export const addExpense: RequestHandler = async (req: ICustomRequest, res: Respo
 
 export const updateExpense: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, vendorId, date, amount, type, notes } = req.body;
+    const { _id } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -489,11 +489,14 @@ export const updateExpense: RequestHandler = async (req: Request, res: Response,
 
     if (!expense) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    expense.vendorId = vendorId;
-    expense.date = date;
-    expense.amount = amount;
-    expense.type = type;
-    expense.notes = notes;
+    delete req.body._id;
+
+    const updates = Object.keys(req.body);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      expense[update] = req.body[update];
+    });
 
     await expense.save();
 

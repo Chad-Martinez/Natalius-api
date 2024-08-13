@@ -128,7 +128,7 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
 
 export const updateShift = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, clubId, start, end, notes, incomeReported } = req.body;
+    const { _id, clubId } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
@@ -136,11 +136,14 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    if (clubId) shift.clubId = clubId;
-    if (start) shift.start = start;
-    if (end) shift.end = end;
-    if (incomeReported !== null || incomeReported !== undefined || incomeReported !== '') shift.incomeReported = incomeReported;
-    if (notes) shift.notes = notes;
+    delete req.body._id;
+
+    const updates = Object.keys(req.body);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      shift[update] = req.body[update];
+    });
 
     await shift.save();
 

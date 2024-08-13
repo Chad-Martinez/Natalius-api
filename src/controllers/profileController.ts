@@ -28,11 +28,14 @@ export const updateUserInfo: RequestHandler = async (req: ICustomRequest, res: R
 
     if (!user) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    const { firstName, lastName, email } = req.body;
+    delete req.body._id;
 
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.email = email;
+    const updates = Object.keys(req.body);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      user[update] = req.body[update];
+    });
 
     await user.save();
     res.status(200).json({ message: 'Profile updated' });

@@ -196,21 +196,17 @@ const addClub = async (req, res, next) => {
 exports.addClub = addClub;
 const updateClub = async (req, res, next) => {
     try {
-        const { _id, name, address, contact, distance, isArchived } = req.body;
+        const { _id } = req.body;
         if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
         const club = await Club_1.default.findById(_id);
         if (!club)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        club.name = name;
-        if (address)
-            club.address = address;
-        if (contact)
-            club.contact = contact;
-        if (distance)
-            club.distance = distance;
-        if (isArchived !== null || isArchived !== undefined || isArchived !== '')
-            club.isArchived = isArchived;
+        delete req.body._id;
+        const updates = Object.keys(req.body);
+        updates.forEach((update) => {
+            club[update] = req.body[update];
+        });
         await club.save();
         res.status(200).json({ message: 'Club Information Updated' });
     }

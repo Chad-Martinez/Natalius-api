@@ -36,7 +36,7 @@ app.use('/api/tokens', tokenRoutes);
 
 app.use(verifyJWT);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/profile', profileRoutes);
+app.use('/api/profiles', profileRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/income', incomeRoutes);

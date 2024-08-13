@@ -199,18 +199,23 @@ export const addClub = async (req: ICustomRequest, res: Response, next: NextFunc
 
 export const updateClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { _id, name, address, contact, distance, isArchived } = req.body;
+    const { _id } = req.body;
 
     if (!isValidObjectId(_id)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
     const club: HydratedDocument<IClub> | null = await Club.findById(_id);
 
     if (!club) throw new HttpErrorResponse(404, 'Requested resource not found');
-    club.name = name;
-    if (address) club.address = address;
-    if (contact) club.contact = contact;
-    if (distance) club.distance = distance;
-    if (isArchived !== null || isArchived !== undefined || isArchived !== '') club.isArchived = isArchived;
+
+    delete req.body._id;
+
+    const updates = Object.keys(req.body);
+
+    updates.forEach((update: string) => {
+      // @ts-ignore
+      club[update] = req.body[update];
+    });
+
     await club.save();
 
     res.status(200).json({ message: 'Club Information Updated' });

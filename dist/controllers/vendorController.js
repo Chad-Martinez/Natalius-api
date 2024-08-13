@@ -65,15 +65,18 @@ const addVendor = async (req, res, next) => {
 exports.addVendor = addVendor;
 const updateVendor = async (req, res, next) => {
     try {
-        const { vendorId, name, defaultType, distance, notes } = req.body;
-        if (!(0, mongoose_1.isValidObjectId)(vendorId))
+        const { _id } = req.body;
+        if (!(0, mongoose_1.isValidObjectId)(_id))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const vendor = await Vendor_1.default.findById(vendorId);
+        const vendor = await Vendor_1.default.findById(_id);
         if (!vendor)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        vendor.name = name;
-        vendor.defaultType = defaultType || 'NONE';
-        (vendor.distance = distance), (vendor.notes = notes), await vendor.save();
+        delete req.body._id;
+        const updates = Object.keys(req.body);
+        updates.forEach((update) => {
+            vendor[update] = req.body[update];
+        });
+        await vendor.save();
         res.status(200).json({ message: 'Vendor update successful' });
     }
     catch (error) {
