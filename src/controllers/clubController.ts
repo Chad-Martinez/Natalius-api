@@ -42,7 +42,7 @@ export const getClubsByUser = async (req: ICustomRequest, res: Response, next: N
                 start: '$$shift.start',
                 end: '$$shift.end',
                 notes: '$$shift.notes',
-                incomeReported: '$$shift.incomeReported',
+                shiftComplete: '$$shift.shiftComplete',
                 created_at: '$$shift.created_at',
                 updated_at: '$$shift.updated_at',
               },
