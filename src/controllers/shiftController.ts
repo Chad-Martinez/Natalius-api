@@ -13,7 +13,7 @@ export const getActiveShiftsByClub = async (req: Request, res: Response, next: N
 
     if (!isValidObjectId(clubId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shifts: HydratedDocument<IShift>[] = await Shift.find({ clubId: clubId, incomeReported: false }).sort({ start: 1 });
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ clubId: clubId, shiftComplete: false }).sort({ start: 1 });
 
     res.status(200).json(shifts);
   } catch (error) {
@@ -61,7 +61,7 @@ export const getShiftWidgetData = async (userId: string): Promise<HydratedDocume
           start: 1,
           end: 1,
           notes: 1,
-          incomeReported: 1,
+          shiftComplete: 1,
         },
       },
     ]).exec();
@@ -78,7 +78,7 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
 
     if (!isValidObjectId(shiftId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId);
+    const shift: HydratedDocument<IShift> | null = await Shift.findById(shiftId, { __v: 0, updated_at: 0, created_at: 0 });
 
     if (!shift) throw new HttpErrorResponse(404, 'Requested resource not found');
 
@@ -151,7 +151,7 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
 
     if (!club) throw new HttpErrorResponse(404, 'Requested Resource not found');
 
-    if (clubId !== club._id) {
+    if (clubId !== club._id.toString()) {
       const shifts = club.shifts as Types.ObjectId[];
       club.shifts = shifts?.filter((s: Types.ObjectId) => s.toString() !== shift._id.toString());
       await club.save();
@@ -201,13 +201,4 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
     console.error('Shift Controller - DeleteShift Error: ', error);
     next(error);
   }
-};
-
-export default {
-  getActiveShiftsByClub,
-  getShiftWidgetData,
-  getShiftById,
-  addShift,
-  updateShift,
-  deleteShift,
 };

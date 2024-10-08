@@ -670,7 +670,7 @@ export const addIncome = async (req: ICustomRequest, res: Response, next: NextFu
       const shift = await Shift.findById(shiftId);
 
       if (shift) {
-        shift.incomeReported = true;
+        shift.shiftComplete = true;
         await shift.save();
       }
     }
@@ -741,7 +741,7 @@ export const deleteIncome = async (req: Request, res: Response, next: NextFuncti
     if (income.shiftId) {
       const shift = await Shift.findById(income.shiftId);
       if (shift) {
-        shift.incomeReported = false;
+        shift.shiftComplete = false;
         await shift.save();
       }
     }
