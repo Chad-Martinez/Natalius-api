@@ -647,7 +647,7 @@ const addIncome = async (req, res, next) => {
         if (shiftId) {
             const shift = await Shift_1.default.findById(shiftId);
             if (shift) {
-                shift.incomeReported = true;
+                shift.shiftComplete = true;
                 await shift.save();
             }
         }
@@ -710,7 +710,7 @@ const deleteIncome = async (req, res, next) => {
         if (income.shiftId) {
             const shift = await Shift_1.default.findById(income.shiftId);
             if (shift) {
-                shift.incomeReported = false;
+                shift.shiftComplete = false;
                 await shift.save();
             }
         }

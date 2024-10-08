@@ -13,7 +13,7 @@ const getActiveShiftsByClub = async (req, res, next) => {
         const { clubId } = req.params;
         if (!(0, mongoose_1.isValidObjectId)(clubId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const shifts = await Shift_1.default.find({ clubId: clubId, incomeReported: false }).sort({ start: 1 });
+        const shifts = await Shift_1.default.find({ clubId: clubId, shiftComplete: false }).sort({ start: 1 });
         res.status(200).json(shifts);
     }
     catch (error) {
@@ -60,7 +60,7 @@ const getShiftWidgetData = async (userId) => {
                     start: 1,
                     end: 1,
                     notes: 1,
-                    incomeReported: 1,
+                    shiftComplete: 1,
                 },
             },
         ]).exec();
@@ -76,7 +76,7 @@ const getShiftById = async (req, res, next) => {
         const { shiftId } = req.params;
         if (!(0, mongoose_1.isValidObjectId)(shiftId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const shift = await Shift_1.default.findById(shiftId);
+        const shift = await Shift_1.default.findById(shiftId, { __v: 0, updated_at: 0, created_at: 0 });
         if (!shift)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
         res.status(200).json(shift);
@@ -139,7 +139,7 @@ const updateShift = async (req, res, next) => {
         const club = await Club_1.default.findOne({ shifts: shift._id });
         if (!club)
             throw new HttpErrorResponse_1.default(404, 'Requested Resource not found');
-        if (clubId !== club._id) {
+        if (clubId !== club._id.toString()) {
             const shifts = club.shifts;
             club.shifts = shifts === null || shifts === void 0 ? void 0 : shifts.filter((s) => s.toString() !== shift._id.toString());
             await club.save();
@@ -191,12 +191,4 @@ const deleteShift = async (req, res, next) => {
     }
 };
 exports.deleteShift = deleteShift;
-exports.default = {
-    getActiveShiftsByClub: exports.getActiveShiftsByClub,
-    getShiftWidgetData: exports.getShiftWidgetData,
-    getShiftById: exports.getShiftById,
-    addShift: exports.addShift,
-    updateShift: exports.updateShift,
-    deleteShift: exports.deleteShift,
-};
 //# sourceMappingURL=shiftController.js.map
