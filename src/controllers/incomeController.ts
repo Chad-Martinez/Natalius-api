@@ -1,7 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Types, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
-import Income from '../models/Income';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Shift from '../models/Shift';
 import { ISprint } from '../interfaces/Sprint.interface';
@@ -38,10 +37,10 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
       throw new HttpErrorResponse(400, 'Missing proper query parameters');
     }
 
-    const count = await Income.find({ userId }).countDocuments();
+    const count = await Shift.find({ userId }).countDocuments();
 
     if (count) {
-      const income = await Income.aggregate([
+      const shiftIncome = await Shift.aggregate([
         {
           $match: {
             userId: new Types.ObjectId(userId),
@@ -49,7 +48,7 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
         },
         {
           $sort: {
-            date: -1,
+            start: -1,
           },
         },
         {
@@ -70,16 +69,13 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
           $unwind: '$clubDetails',
         },
         {
-          $lookup: {
-            from: 'shifts',
-            localField: 'shiftId',
-            foreignField: '_id',
-            as: 'shiftDetails',
+          $addFields: {
+            club: '$clubDetails.name',
           },
         },
         {
-          $addFields: {
-            club: '$clubDetails.name',
+          $match: {
+            'income.amount': { $gt: 0 },
           },
         },
         {
@@ -87,19 +83,20 @@ export const getPaginatedIncome = async (req: ICustomRequest, res: Response, nex
             _id: 1,
             clubId: 1,
             club: 1,
-            shiftId: 1,
-            shiftDetails: 1,
-            date: 1,
-            amount: 1,
-            type: 1,
+            start: 1,
+            end: 1,
+            shiftComplete: 1,
             notes: 1,
+            expenses: 1,
+            income: 1,
+            milage: 1,
           },
         },
       ]);
 
-      res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
+      res.status(200).json({ shiftIncome, count, pages: Math.ceil(count / +limit) });
     } else {
-      res.status(200).json({ income: [], count });
+      res.status(200).json({ shiftIncome: [], count });
     }
   } catch (error) {
     console.error('Income Controller Error - PaginatedIncome: ', error);
