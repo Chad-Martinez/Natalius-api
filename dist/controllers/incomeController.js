@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getIncomeAverageWidgetData = exports.getIncomeGraphData = exports.getYtdIncomeWidgetData = exports.getPaginatedIncome = exports.getIncomeDashboardData = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
-const Income_1 = __importDefault(require("../models/Income"));
 const Shift_1 = __importDefault(require("../models/Shift"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const isBetween_1 = __importDefault(require("dayjs/plugin/isBetween"));
@@ -37,9 +36,9 @@ const getPaginatedIncome = async (req, res, next) => {
         if (!page || !limit) {
             throw new HttpErrorResponse_1.default(400, 'Missing proper query parameters');
         }
-        const count = await Income_1.default.find({ userId }).countDocuments();
+        const count = await Shift_1.default.find({ userId }).countDocuments();
         if (count) {
-            const income = await Income_1.default.aggregate([
+            const shiftIncome = await Shift_1.default.aggregate([
                 {
                     $match: {
                         userId: new mongoose_1.Types.ObjectId(userId),
@@ -47,7 +46,7 @@ const getPaginatedIncome = async (req, res, next) => {
                 },
                 {
                     $sort: {
-                        date: -1,
+                        start: -1,
                     },
                 },
                 {
@@ -68,16 +67,13 @@ const getPaginatedIncome = async (req, res, next) => {
                     $unwind: '$clubDetails',
                 },
                 {
-                    $lookup: {
-                        from: 'shifts',
-                        localField: 'shiftId',
-                        foreignField: '_id',
-                        as: 'shiftDetails',
+                    $addFields: {
+                        club: '$clubDetails.name',
                     },
                 },
                 {
-                    $addFields: {
-                        club: '$clubDetails.name',
+                    $match: {
+                        'income.amount': { $gt: 0 },
                     },
                 },
                 {
@@ -85,19 +81,20 @@ const getPaginatedIncome = async (req, res, next) => {
                         _id: 1,
                         clubId: 1,
                         club: 1,
-                        shiftId: 1,
-                        shiftDetails: 1,
-                        date: 1,
-                        amount: 1,
-                        type: 1,
+                        start: 1,
+                        end: 1,
+                        shiftComplete: 1,
                         notes: 1,
+                        expenses: 1,
+                        income: 1,
+                        milage: 1,
                     },
                 },
             ]);
-            res.status(200).json({ income, count, pages: Math.ceil(count / +limit) });
+            res.status(200).json({ shiftIncome, count, pages: Math.ceil(count / +limit) });
         }
         else {
-            res.status(200).json({ income: [], count });
+            res.status(200).json({ shiftIncome: [], count });
         }
     }
     catch (error) {
