@@ -3,12 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteIncome = exports.updateIncome = exports.addIncome = exports.getIncomeAverageWidgetData = exports.getIncomeById = exports.getIncomeGraphData = exports.getYtdIncomeWidgetData = exports.getPaginatedIncome = exports.getIncomeByUser = exports.getIncomeDashboardData = void 0;
+exports.getIncomeAverageWidgetData = exports.getIncomeGraphData = exports.getYtdIncomeWidgetData = exports.getPaginatedIncome = exports.getIncomeDashboardData = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Income_1 = __importDefault(require("../models/Income"));
 const Shift_1 = __importDefault(require("../models/Shift"));
-const Sprint_1 = __importDefault(require("../models/Sprint"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const isBetween_1 = __importDefault(require("dayjs/plugin/isBetween"));
 const sprintController_1 = require("./sprintController");
@@ -29,45 +28,6 @@ const getIncomeDashboardData = async (req, res, next) => {
     }
 };
 exports.getIncomeDashboardData = getIncomeDashboardData;
-const getIncomeByUser = async (req, res, next) => {
-    try {
-        const { userId } = req;
-        if (!(0, mongoose_1.isValidObjectId)(userId))
-            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const income = await Income_1.default.find({ userId: userId }, { __v: 0 })
-            .sort({
-            date: 1,
-        })
-            .populate({
-            path: 'clubId',
-            select: { name: 1 },
-        })
-            .exec();
-        const mappedIncome = income.map((income) => {
-            const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
-            return {
-                _id,
-                club: {
-                    _id: clubId === null || clubId === void 0 ? void 0 : clubId._id,
-                    name: clubId === null || clubId === void 0 ? void 0 : clubId.name,
-                },
-                shiftId,
-                date,
-                amount,
-                type,
-                userId,
-                created_at,
-                updated_at,
-            };
-        });
-        res.status(200).json({ income: mappedIncome });
-    }
-    catch (error) {
-        console.error('Income Controller Error - IncomeByUser: ', error);
-        next(error);
-    }
-};
-exports.getIncomeByUser = getIncomeByUser;
 const getPaginatedIncome = async (req, res, next) => {
     try {
         const { page, limit } = req.query;
@@ -147,11 +107,11 @@ const getPaginatedIncome = async (req, res, next) => {
 };
 exports.getPaginatedIncome = getPaginatedIncome;
 const getYtdIncomeWidgetData = async (userId) => {
-    const ytdIncome = await Income_1.default.aggregate([
+    const ytdIncome = await Shift_1.default.aggregate([
         {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
-                date: {
+                start: {
                     $gte: new Date((0, dayjs_1.default)().startOf('year').format('MM/DD/YY')),
                 },
             },
@@ -159,7 +119,7 @@ const getYtdIncomeWidgetData = async (userId) => {
         {
             $group: {
                 _id: null,
-                total: { $sum: '$amount' },
+                total: { $sum: '$income.amount' },
             },
         },
     ]).exec();
@@ -173,29 +133,21 @@ const getIncomeGraphData = async (userId) => {
     const endOfWeek = new Date();
     endOfWeek.setHours(23, 59, 59, 999);
     endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const endOfMonth = new Date(startOfMonth);
-    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-    endOfMonth.setMilliseconds(-1);
-    const currentMonth = startOfMonth.getMonth();
-    const startOfQuarter = new Date(startOfMonth);
-    startOfQuarter.setMonth(currentMonth - (currentMonth % 3));
-    const endOfQuarter = new Date(startOfQuarter);
-    endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
-    endOfQuarter.setMilliseconds(-1);
-    const startOfYear = new Date(startOfMonth);
-    startOfYear.setMonth(0);
-    const endOfYear = new Date(startOfYear);
-    endOfYear.setFullYear(startOfYear.getFullYear() + 1);
-    endOfYear.setMilliseconds(-1);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear + 1, 0, 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startOfQuarter = new Date(currentYear, Math.floor(now.getMonth() / 3) * 3, 1);
+    const endOfQuarter = new Date(startOfQuarter.getFullYear(), startOfQuarter.getMonth() + 3, 0);
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthsOfYear = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const incomeGraphData = await Income_1.default.aggregate([
+    const incomeGraphData = await Shift_1.default.aggregate([
         {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
+                start: { $gte: startOfYear, $lt: endOfYear },
             },
         },
         {
@@ -203,13 +155,13 @@ const getIncomeGraphData = async (userId) => {
                 week: [
                     {
                         $match: {
-                            date: { $gte: startOfWeek, $lte: endOfWeek },
+                            start: { $gte: startOfWeek, $lte: endOfWeek },
                         },
                     },
                     {
                         $group: {
-                            _id: { $dayOfWeek: '$date' },
-                            total: { $sum: '$amount' },
+                            _id: { $dayOfWeek: '$start' },
+                            total: { $sum: '$income.amount' },
                         },
                     },
                     {
@@ -218,9 +170,7 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            day: {
-                                $arrayElemAt: [daysOfWeek, { $subtract: ['$_id', 1] }],
-                            },
+                            day: { $arrayElemAt: [daysOfWeek, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
@@ -228,17 +178,17 @@ const getIncomeGraphData = async (userId) => {
                 month: [
                     {
                         $match: {
-                            date: { $gte: startOfMonth, $lte: endOfMonth },
+                            start: { $gte: startOfMonth, $lte: endOfMonth },
                         },
                     },
                     {
                         $group: {
                             _id: {
-                                year: { $year: '$date' },
-                                month: { $month: '$date' },
-                                week: { $week: '$date' },
+                                year: { $year: '$start' },
+                                month: { $month: '$start' },
+                                week: { $week: '$start' },
                             },
-                            total: { $sum: '$amount' },
+                            total: { $sum: '$income.amount' },
                         },
                     },
                     {
@@ -257,13 +207,13 @@ const getIncomeGraphData = async (userId) => {
                 quarter: [
                     {
                         $match: {
-                            date: { $gte: startOfQuarter, $lte: endOfQuarter },
+                            start: { $gte: startOfQuarter, $lte: endOfQuarter },
                         },
                     },
                     {
                         $group: {
-                            _id: { $month: '$date' },
-                            total: { $sum: '$amount' },
+                            _id: { $month: '$start' },
+                            total: { $sum: '$income.amount' },
                         },
                     },
                     {
@@ -272,23 +222,16 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            month: {
-                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
-                            },
+                            month: { $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
                 ],
                 year: [
                     {
-                        $match: {
-                            date: { $gte: startOfYear, $lte: endOfYear },
-                        },
-                    },
-                    {
                         $group: {
-                            _id: { $month: '$date' },
-                            total: { $sum: '$amount' },
+                            _id: { $month: '$start' },
+                            total: { $sum: '$income.amount' },
                         },
                     },
                     {
@@ -297,9 +240,7 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            month: {
-                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
-                            },
+                            month: { $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
@@ -315,15 +256,14 @@ const getIncomeGraphData = async (userId) => {
                         in: {
                             $let: {
                                 vars: {
-                                    dayOfWeek: { $mod: [{ $add: ['$$dayOffset', 1] }, 7] },
-                                    dayName: { $arrayElemAt: [daysOfWeek, { $mod: [{ $add: ['$$dayOffset', 1] }, 7] }] },
+                                    dayName: { $arrayElemAt: [daysOfWeek, '$$dayOffset'] },
                                     dailyIncome: {
                                         $arrayElemAt: [
                                             {
                                                 $filter: {
                                                     input: '$week',
                                                     as: 'dayIncome',
-                                                    cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [daysOfWeek, { $mod: [{ $add: ['$$dayOffset', 1] }, 7] }] }] },
+                                                    cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [daysOfWeek, '$$dayOffset'] }] },
                                                 },
                                             },
                                             0,
@@ -487,256 +427,105 @@ const getIncomeGraphData = async (userId) => {
                 },
             },
         },
-    ]).exec();
-    return incomeGraphData.length > 0 ? incomeGraphData[0] : null;
+    ]);
+    const result = incomeGraphData[0];
+    ['week', 'month', 'quarter', 'year'].forEach((period) => {
+        if (!result[period] || result[period].length === 0) {
+            result[period] = [];
+        }
+    });
+    return result;
 };
 exports.getIncomeGraphData = getIncomeGraphData;
-const getIncomeById = async (req, res, next) => {
-    try {
-        const { incomeId } = req.params;
-        if (!(0, mongoose_1.isValidObjectId)(incomeId))
-            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const income = (await Income_1.default.findById(incomeId)
-            .populate({
-            path: 'clubId',
-            select: { name: 1 },
-        })
-            .exec());
-        if (!income)
-            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const { _id, clubId, shiftId, date, amount, type, userId, created_at, updated_at } = income;
-        const mappedIncome = {
-            _id,
-            club: {
-                _id: clubId === null || clubId === void 0 ? void 0 : clubId._id,
-                name: clubId === null || clubId === void 0 ? void 0 : clubId.name,
-            },
-            shiftId,
-            date,
-            amount,
-            type,
-            userId,
-            created_at,
-            updated_at,
-        };
-        res.status(200).json({ income: mappedIncome });
-    }
-    catch (error) {
-        console.error('Income Controller Error - IncomeById: ', error);
-        next(error);
-    }
-};
-exports.getIncomeById = getIncomeById;
 const getIncomeAverageWidgetData = async (userId) => {
-    const averages = await Income_1.default.aggregate([
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const startOfCurrentYear = new Date(currentYear, 0, 1);
+    const endOfCurrentYear = new Date(currentYear + 1, 0, 1);
+    const result = await Shift_1.default.aggregate([
         {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
-            },
-        },
-        {
-            $group: {
-                _id: null,
-                totalAmount: { $sum: '$amount' },
-                count: { $sum: 1 },
-                firstDate: { $min: '$date' },
-                lastDate: { $max: '$date' },
-            },
-        },
-        {
-            $addFields: {
-                daysDiff: {
-                    $dateDiff: {
-                        startDate: '$firstDate',
-                        endDate: '$lastDate',
-                        unit: 'day',
-                    },
-                },
-                weeksDiff: {
-                    $dateDiff: {
-                        startDate: '$firstDate',
-                        endDate: '$lastDate',
-                        unit: 'week',
-                    },
-                },
-                monthsDiff: {
-                    $dateDiff: {
-                        startDate: '$firstDate',
-                        endDate: '$lastDate',
-                        unit: 'month',
-                    },
-                },
-                quartersDiff: {
-                    $divide: [
-                        {
-                            $dateDiff: {
-                                startDate: '$firstDate',
-                                endDate: '$lastDate',
-                                unit: 'month',
-                            },
-                        },
-                        3,
-                    ],
-                },
-                yearsDiff: {
-                    $dateDiff: {
-                        startDate: '$firstDate',
-                        endDate: '$lastDate',
-                        unit: 'year',
-                    },
+                start: {
+                    $gte: startOfCurrentYear,
+                    $lte: endOfCurrentYear,
                 },
             },
         },
         {
             $project: {
-                _id: 0,
-                daily: {
-                    $cond: {
-                        if: { $eq: ['$daysDiff', 0] },
-                        then: null,
-                        else: { $round: [{ $divide: ['$totalAmount', '$daysDiff'] }, 0] },
-                    },
-                },
-                weekly: {
-                    $cond: {
-                        if: { $eq: ['$weeksDiff', 0] },
-                        then: null,
-                        else: { $round: [{ $divide: ['$totalAmount', '$weeksDiff'] }, 0] },
-                    },
-                },
-                monthly: {
-                    $cond: {
-                        if: { $eq: ['$monthsDiff', 0] },
-                        then: null,
-                        else: { $round: [{ $divide: ['$totalAmount', '$monthsDiff'] }, 0] },
-                    },
-                },
-                quarterly: {
-                    $cond: {
-                        if: { $eq: ['$quartersDiff', 0] },
-                        then: null,
-                        else: { $round: [{ $divide: ['$totalAmount', '$quartersDiff'] }, 0] },
-                    },
-                },
-                yearly: {
-                    $cond: {
-                        if: { $eq: ['$yearsDiff', 0] },
-                        then: null,
-                        else: { $round: [{ $divide: ['$totalAmount', '$yearsDiff'] }, 0] },
-                    },
-                },
+                incomeAmount: '$income.amount',
+                week: { $dateTrunc: { date: '$start', unit: 'week', binSize: 1 } },
+                month: { $dateTrunc: { date: '$start', unit: 'month', binSize: 1 } },
             },
         },
-    ]).exec();
-    return averages[0];
+        {
+            $facet: {
+                averageIncomePerShift: [
+                    {
+                        $group: {
+                            _id: null,
+                            averageIncome: { $avg: '$incomeAmount' },
+                        },
+                    },
+                ],
+                weeklyAverages: [
+                    {
+                        $group: {
+                            _id: '$week',
+                            totalIncomePerWeek: { $sum: '$incomeAmount' },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalWeeksWithData: { $sum: 1 },
+                            averageIncomePerWeek: { $avg: '$totalIncomePerWeek' },
+                        },
+                    },
+                ],
+                monthlyAverages: [
+                    {
+                        $group: {
+                            _id: '$month',
+                            totalIncomePerMonth: { $sum: '$incomeAmount' },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalMonthsWithData: { $sum: 1 },
+                            averageIncomePerMonth: { $avg: '$totalIncomePerMonth' },
+                        },
+                    },
+                ],
+                totalIncomeForYear: [
+                    {
+                        $group: {
+                            _id: null,
+                            totalIncome: { $sum: '$incomeAmount' },
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                perShift: { $arrayElemAt: ['$averageIncomePerShift.averageIncome', 0] },
+                perWeek: { $arrayElemAt: ['$weeklyAverages.averageIncomePerWeek', 0] },
+                perMonth: { $arrayElemAt: ['$monthlyAverages.averageIncomePerMonth', 0] },
+                perYear: { $arrayElemAt: ['$totalIncomeForYear.totalIncome', 0] },
+            },
+        },
+    ]);
+    return result[0];
 };
 exports.getIncomeAverageWidgetData = getIncomeAverageWidgetData;
-const addIncome = async (req, res, next) => {
-    try {
-        const { clubId, shiftId, date, amount, type } = req.body;
-        const { userId } = req;
-        const income = new Income_1.default({
-            clubId,
-            shiftId,
-            date,
-            amount,
-            type,
-            userId,
-        });
-        await income.save();
-        if (shiftId) {
-            const shift = await Shift_1.default.findById(shiftId);
-            if (shift) {
-                shift.shiftComplete = true;
-                await shift.save();
-            }
-        }
-        const sprint = await Sprint_1.default.findOne({ userId: userId, isCompleted: false });
-        if (sprint && (0, dayjs_1.default)(date).isBetween(sprint.start, sprint.end, null, '[]')) {
-            sprint.incomes.push(income._id);
-            await sprint.save();
-        }
-        res.status(201).json({ incomeId: income._id, message: 'Income added' });
-    }
-    catch (error) {
-        console.error('Income Controller Error - AddIncome: ', error);
-        if (error.name === 'ValidationError') {
-            const err = new HttpErrorResponse_1.default(422, error.message);
-            next(err);
-        }
-        else {
-            next(error);
-        }
-    }
-};
-exports.addIncome = addIncome;
-const updateIncome = async (req, res, next) => {
-    const { _id } = req.body;
-    try {
-        if (!(0, mongoose_1.isValidObjectId)(_id))
-            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const income = await Income_1.default.findById(_id);
-        if (!income)
-            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        delete req.body._id;
-        const updates = Object.keys(req.body);
-        console.log(updates);
-        updates.forEach((update) => {
-            income[update] = req.body[update];
-        });
-        await income.save();
-        res.status(200).json({ message: 'Income updated' });
-    }
-    catch (error) {
-        console.error('Income Controller Error - UpdateIncome: ', error);
-        if (error.name === 'ValidationError') {
-            const err = new HttpErrorResponse_1.default(422, error.message);
-            next(err);
-        }
-        else {
-            next(error);
-        }
-    }
-};
-exports.updateIncome = updateIncome;
-const deleteIncome = async (req, res, next) => {
-    try {
-        const { incomeId } = req.params;
-        if (!(0, mongoose_1.isValidObjectId)(incomeId))
-            throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const income = await Income_1.default.findById(incomeId);
-        if (!income)
-            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        if (income.shiftId) {
-            const shift = await Shift_1.default.findById(income.shiftId);
-            if (shift) {
-                shift.shiftComplete = false;
-                await shift.save();
-            }
-        }
-        await Income_1.default.deleteOne({ _id: incomeId });
-        const sprint = await Sprint_1.default.findOne({ userId: income.userId });
-        if (sprint) {
-            sprint.incomes = sprint.incomes.filter((incomeId) => incomeId !== income._id);
-            await sprint.save();
-        }
-        res.status(200).json({ message: 'Income deleted' });
-    }
-    catch (error) {
-        console.error('Income Controller Error - DeleteIncome: ', error);
-        next(error);
-    }
-};
-exports.deleteIncome = deleteIncome;
 exports.default = {
     getIncomeDashboardData: exports.getIncomeDashboardData,
-    getIncomeByUser: exports.getIncomeByUser,
     getPaginatedIncome: exports.getPaginatedIncome,
     getYtdIncomeWidgetData: exports.getYtdIncomeWidgetData,
-    getIncomeById: exports.getIncomeById,
     getIncomeAverageWidgetData: exports.getIncomeAverageWidgetData,
-    addIncome: exports.addIncome,
-    updateIncome: exports.updateIncome,
-    deleteIncome: exports.deleteIncome,
 };
 //# sourceMappingURL=incomeController.js.map
