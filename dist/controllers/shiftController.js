@@ -8,6 +8,7 @@ const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Shift_1 = __importDefault(require("../models/Shift"));
 const Club_1 = __importDefault(require("../models/Club"));
+const Sprint_1 = __importDefault(require("../models/Sprint"));
 const getActiveShiftsByClub = async (req, res, next) => {
     try {
         const { clubId } = req.params;
@@ -172,16 +173,21 @@ const deleteShift = async (req, res, next) => {
         if (!(0, mongoose_1.isValidObjectId)(shiftId))
             throw new HttpErrorResponse_1.default(400, 'Provided Shift id is not valid');
         const club = await Club_1.default.findById(clubId);
-        if (!club)
-            throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const filteredClubs = (_a = club.shifts) === null || _a === void 0 ? void 0 : _a.filter((id) => id.toString() !== shiftId);
-        if (!filteredClubs) {
-            club.shifts = [];
+        if (club) {
+            const filteredClubs = (_a = club.shifts) === null || _a === void 0 ? void 0 : _a.filter((id) => id.toString() !== shiftId);
+            if (!filteredClubs) {
+                club.shifts = [];
+            }
+            else {
+                club.shifts = filteredClubs;
+            }
+            await club.save();
         }
-        else {
-            club.shifts = filteredClubs;
+        const sprint = await Sprint_1.default.findOne({ shiftIds: shiftId });
+        if (sprint) {
+            sprint.shiftIds = sprint.shiftIds.filter((id) => id.toString() !== shiftId);
+            await sprint.save();
         }
-        await club.save();
         await Shift_1.default.deleteOne({ _id: shiftId });
         res.status(200).json({ message: 'Shift deleted' });
     }

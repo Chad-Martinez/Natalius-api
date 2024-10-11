@@ -4,9 +4,9 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Sprint from '../models/Sprint';
 import { ISprint } from '../interfaces/Sprint.interface';
-import Income from '../models/Income';
-import { IIncome } from '../interfaces/Income.interface';
 import dayjs from 'dayjs';
+import { IShift } from '../interfaces/Shift.interface';
+import Shift from '../models/Shift';
 
 export const getActiveSprintByUser = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -33,15 +33,15 @@ export const getSprintWidgetData = async (userId: string): Promise<HydratedDocum
     },
     {
       $lookup: {
-        from: 'incomes',
-        localField: 'incomes',
+        from: 'shifts',
+        localField: 'shiftIds',
         foreignField: '_id',
-        as: 'incomeDetails',
+        as: 'shiftDetails',
       },
     },
     {
       $addFields: {
-        progress: { $sum: '$incomeDetails.amount' },
+        progress: { $sum: '$shiftDetails.income.amount' },
         timeLeft: {
           $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
         },
@@ -70,14 +70,14 @@ export const addSprint = async (req: ICustomRequest, res: Response, next: NextFu
     const startDate = dayjs(start).hour(0).minute(0).second(0).millisecond(0);
     const endDate = startDate.add(2, 'week');
 
-    const incomes: HydratedDocument<IIncome>[] = await Income.find({ userId: userId, date: { $gte: startDate, $lte: endDate } });
-    const mappedIds: Types.ObjectId[] = incomes.map((income: IIncome) => income._id);
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ userId: userId, start: { $gte: startDate, $lte: endDate } });
+    const mappedIds: Types.ObjectId[] = shifts.map((shift: IShift) => shift._id);
 
     const sprint = new Sprint({
       start: startDate,
       end: endDate,
       goal,
-      incomes: mappedIds,
+      shiftIds: mappedIds,
       isCompleted: false,
       userId,
     });
@@ -112,9 +112,9 @@ export const updateSprint = async (req: Request, res: Response, next: NextFuncti
     sprint.end = endDate.toDate();
     sprint.goal = goal;
 
-    const incomes: HydratedDocument<IIncome>[] = await Income.find({ userId: sprint.userId, date: { $gte: sprint.start, $lte: sprint.end } });
-    const mappedIds: Types.ObjectId[] = incomes.map((income: IIncome) => income._id);
-    sprint.incomes = mappedIds;
+    const shifts: HydratedDocument<IShift>[] = await Shift.find({ userId: sprint.userId, start: { $gte: sprint.start, $lte: sprint.end } });
+    const mappedIds: Types.ObjectId[] = shifts.map((shift: IShift) => shift._id);
+    sprint.shiftIds = mappedIds;
 
     await sprint.save();
 
@@ -141,7 +141,7 @@ export const markSprintComplete = async (req: Request, res: Response, next: Next
     if (!sprint) throw new HttpErrorResponse(404, 'Requested resource not found');
 
     sprint.isCompleted = true;
-    sprint.goalMet = goal > progress ? false : true;
+    sprint.goalMet = goal >= progress ? false : true;
 
     await sprint.save();
 

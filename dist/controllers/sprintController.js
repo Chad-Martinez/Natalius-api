@@ -7,8 +7,8 @@ exports.deleteSprint = exports.markSprintComplete = exports.updateSprint = expor
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
-const Income_1 = __importDefault(require("../models/Income"));
 const dayjs_1 = __importDefault(require("dayjs"));
+const Shift_1 = __importDefault(require("../models/Shift"));
 const getActiveSprintByUser = async (req, res, next) => {
     try {
         const { userId } = req;
@@ -33,15 +33,15 @@ const getSprintWidgetData = async (userId) => {
         },
         {
             $lookup: {
-                from: 'incomes',
-                localField: 'incomes',
+                from: 'shifts',
+                localField: 'shiftIds',
                 foreignField: '_id',
-                as: 'incomeDetails',
+                as: 'shiftDetails',
             },
         },
         {
             $addFields: {
-                progress: { $sum: '$incomeDetails.amount' },
+                progress: { $sum: '$shiftDetails.income.amount' },
                 timeLeft: {
                     $divide: [{ $subtract: ['$end', new Date()] }, 1000 * 60 * 60 * 24],
                 },
@@ -67,13 +67,13 @@ const addSprint = async (req, res, next) => {
         const { userId } = req;
         const startDate = (0, dayjs_1.default)(start).hour(0).minute(0).second(0).millisecond(0);
         const endDate = startDate.add(2, 'week');
-        const incomes = await Income_1.default.find({ userId: userId, date: { $gte: startDate, $lte: endDate } });
-        const mappedIds = incomes.map((income) => income._id);
+        const shifts = await Shift_1.default.find({ userId: userId, start: { $gte: startDate, $lte: endDate } });
+        const mappedIds = shifts.map((shift) => shift._id);
         const sprint = new Sprint_1.default({
             start: startDate,
             end: endDate,
             goal,
-            incomes: mappedIds,
+            shiftIds: mappedIds,
             isCompleted: false,
             userId,
         });
@@ -105,9 +105,9 @@ const updateSprint = async (req, res, next) => {
         sprint.start = startDate.toDate();
         sprint.end = endDate.toDate();
         sprint.goal = goal;
-        const incomes = await Income_1.default.find({ userId: sprint.userId, date: { $gte: sprint.start, $lte: sprint.end } });
-        const mappedIds = incomes.map((income) => income._id);
-        sprint.incomes = mappedIds;
+        const shifts = await Shift_1.default.find({ userId: sprint.userId, start: { $gte: sprint.start, $lte: sprint.end } });
+        const mappedIds = shifts.map((shift) => shift._id);
+        sprint.shiftIds = mappedIds;
         await sprint.save();
         res.status(200).json({ message: 'Sprint updated' });
     }
@@ -132,7 +132,7 @@ const markSprintComplete = async (req, res, next) => {
         if (!sprint)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
         sprint.isCompleted = true;
-        sprint.goalMet = goal > progress ? false : true;
+        sprint.goalMet = goal >= progress ? false : true;
         await sprint.save();
         res.status(200).json({ message: 'Sprint Completed', goalMet: sprint.goalMet });
     }

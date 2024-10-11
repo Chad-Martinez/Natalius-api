@@ -4,7 +4,7 @@ export interface ISprintBase {
   start: Date;
   end: Date;
   goal: Number;
-  incomes: Types.ObjectId[];
+  shiftIds: Types.ObjectId[];
   isCompleted: Boolean;
   goalMet: Boolean;
   total: Number;

@@ -16,7 +16,7 @@ const sprintSchema = new Schema<ISprint>(
       required: [true, 'Sprint goal is required'],
       min: [1, 'Minimum of $1'],
     },
-    incomes: [{ type: Schema.Types.ObjectId, ref: 'Income', default: [] }],
+    shiftIds: [{ type: Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     isCompleted: {
       type: Boolean,
       default: false,
