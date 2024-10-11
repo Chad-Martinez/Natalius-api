@@ -15,7 +15,7 @@ const sprintSchema = new mongoose_1.Schema({
         required: [true, 'Sprint goal is required'],
         min: [1, 'Minimum of $1'],
     },
-    incomes: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Income', default: [] }],
+    shiftIds: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     isCompleted: {
         type: Boolean,
         default: false,
