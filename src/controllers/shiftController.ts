@@ -6,6 +6,7 @@ import Shift from '../models/Shift';
 import { IShift } from '../interfaces/Shift.interface';
 import Club from '../models/Club';
 import { IClub } from '../interfaces/Club.interface';
+import Sprint from '../models/Sprint';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -184,16 +185,22 @@ export const deleteShift = async (req: Request, res: Response, next: NextFunctio
 
     const club: HydratedDocument<IClub> | null = await Club.findById(clubId);
 
-    if (!club) throw new HttpErrorResponse(404, 'Requested resource not found');
-    const filteredClubs = club.shifts?.filter((id) => id.toString() !== shiftId);
+    if (club) {
+      const filteredClubs = club.shifts?.filter((id) => id.toString() !== shiftId);
 
-    if (!filteredClubs) {
-      club.shifts = [];
-    } else {
-      club.shifts = filteredClubs;
+      if (!filteredClubs) {
+        club.shifts = [];
+      } else {
+        club.shifts = filteredClubs;
+      }
+      await club.save();
     }
 
-    await club.save();
+    const sprint = await Sprint.findOne({ shiftIds: shiftId });
+    if (sprint) {
+      sprint.shiftIds = sprint.shiftIds.filter((id) => id.toString() !== shiftId);
+      await sprint.save();
+    }
 
     await Shift.deleteOne({ _id: shiftId });
     res.status(200).json({ message: 'Shift deleted' });
