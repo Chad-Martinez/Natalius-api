@@ -7,6 +7,7 @@ import { IShift } from '../interfaces/Shift.interface';
 import Club from '../models/Club';
 import { IClub } from '../interfaces/Club.interface';
 import Sprint from '../models/Sprint';
+import { ISprint } from 'src/interfaces/Sprint.interface';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -114,6 +115,13 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
     }
     club.shifts.push(savedShift._id);
     club.save();
+
+    const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ userId: userId, isCompleted: false });
+
+    if (sprint) {
+      sprint.shiftIds.push(savedShift._id);
+      await sprint.save();
+    }
 
     res.status(201).json({ shiftId: shift._id });
   } catch (error) {
