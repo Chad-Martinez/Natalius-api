@@ -108,6 +108,11 @@ const addShift = async (req, res, next) => {
         }
         club.shifts.push(savedShift._id);
         club.save();
+        const sprint = await Sprint_1.default.findOne({ userId: userId, isCompleted: false });
+        if (sprint) {
+            sprint.shiftIds.push(savedShift._id);
+            await sprint.save();
+        }
         res.status(201).json({ shiftId: shift._id });
     }
     catch (error) {

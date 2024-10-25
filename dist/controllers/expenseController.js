@@ -10,6 +10,7 @@ const mongoose_1 = require("mongoose");
 const dayjs_1 = __importDefault(require("dayjs"));
 const dayOfYear_1 = __importDefault(require("dayjs/plugin/dayOfYear"));
 const quarterOfYear_1 = __importDefault(require("dayjs/plugin/quarterOfYear"));
+const Shift_1 = __importDefault(require("../models/Shift"));
 dayjs_1.default.extend(dayOfYear_1.default);
 dayjs_1.default.extend(quarterOfYear_1.default);
 const getExpenseDashboardData = async (req, res, next) => {
@@ -131,7 +132,25 @@ const getYtdExpenseWidgetData = async (userId) => {
             },
         },
     ]).exec();
-    return ytdExpenses.length > 0 ? ytdExpenses[0].total : 0;
+    const ytdShiftExpenses = await Shift_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+                start: {
+                    $gte: new Date((0, dayjs_1.default)().startOf('year').format('MM/DD/YY')),
+                },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$expenses.totalShiftExpenses' },
+            },
+        },
+    ]).exec();
+    const totalExpenses = ytdExpenses[0].total || 0;
+    const totalShiftExpenses = ytdShiftExpenses[0].total || 0;
+    return totalExpenses + totalShiftExpenses;
 };
 exports.getYtdExpenseWidgetData = getYtdExpenseWidgetData;
 const getExpensePieData = async (userId) => {
@@ -251,7 +270,138 @@ const getExpensePieData = async (userId) => {
             },
         },
     ]).exec();
-    return expensePieData.length > 0 ? expensePieData[0] : null;
+    const shiftExpensePieData = await Shift_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+            },
+        },
+        {
+            $facet: {
+                month: [
+                    {
+                        $match: {
+                            start: {
+                                $gte: startOfMonth,
+                                $lt: endOfMonth,
+                            },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            value: { $sum: '$expenses.totalShiftExpenses' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: 'SHIFT',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+                quarter: [
+                    {
+                        $match: {
+                            start: {
+                                $gte: startOfQuarter,
+                                $lt: endOfQuarter,
+                            },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            value: { $sum: '$expenses.totalShiftExpenses' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: 'SHIFT',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+                year: [
+                    {
+                        $match: {
+                            start: {
+                                $gte: startOfYear,
+                                $lt: endOfYear,
+                            },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            value: { $sum: '$expenses.totalShiftExpenses' },
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            label: 'SHIFT',
+                            value: 1,
+                            count: 1,
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $addFields: {
+                defaultDataSet: {
+                    $cond: [
+                        { $gt: [{ $size: { $filter: { input: '$month', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
+                        'month',
+                        {
+                            $cond: [
+                                { $gt: [{ $size: { $filter: { input: '$quarter', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
+                                'quarter',
+                                {
+                                    $cond: [{ $gt: [{ $size: { $filter: { input: '$year', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] }, 'year', 'none'],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+        },
+    ]).exec();
+    const combinedExpenses = {
+        month: [],
+        quarter: [],
+        year: [],
+        defaultDataSet: '',
+    };
+    ['month', 'quarter', 'year'].forEach((period) => {
+        if (Array.isArray(expensePieData[0][period]) && Array.isArray(shiftExpensePieData[0][period])) {
+            combinedExpenses[period] = [...expensePieData[0][period], ...shiftExpensePieData[0][period]];
+        }
+        else if (Array.isArray(expensePieData[0][period])) {
+            combinedExpenses[period] = [...expensePieData[0][period]];
+        }
+        else if (Array.isArray(shiftExpensePieData[0][period])) {
+            combinedExpenses[period] = [...shiftExpensePieData[0][period]];
+        }
+    });
+    if (expensePieData[0].defaultDataSet === 'month' || shiftExpensePieData[0].defaultDataSet === 'month') {
+        combinedExpenses.defaultDataSet = 'month';
+    }
+    else if (expensePieData[0].defaultDataSet === 'quarter' || shiftExpensePieData[0].defaultDataSet === 'quarter') {
+        combinedExpenses.defaultDataSet = 'quarter';
+    }
+    else if (expensePieData[0].defaultDataSet === 'year' || shiftExpensePieData[0].defaultDataSet === 'year') {
+        combinedExpenses.defaultDataSet = 'year';
+    }
+    return combinedExpenses;
 };
 const getExpenseGraphData = async (userId) => {
     const startOfWeek = new Date();
@@ -323,7 +473,7 @@ const getExpenseGraphData = async (userId) => {
                         },
                     },
                 ],
-                monthExpenseCurrentQuarter: [
+                monthlyExpenseCurrentQuarter: [
                     {
                         $match: {
                             date: { $gte: startOfQuarter, $lte: endOfQuarter },
@@ -404,7 +554,133 @@ const getExpenseGraphData = async (userId) => {
             },
         },
     ]).exec();
-    return expenseGraphData.length > 0 ? expenseGraphData[0] : null;
+    const shiftExpenseGraphData = await Shift_1.default.aggregate([
+        {
+            $match: {
+                userId: new mongoose_1.Types.ObjectId(userId),
+            },
+        },
+        {
+            $facet: {
+                weeklyExpenseCurrentMonth: [
+                    {
+                        $match: {
+                            start: { $gte: startOfMonth, $lte: endOfMonth },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                week: { $week: '$start' },
+                            },
+                            totalExpense: { $sum: '$expenses.totalShiftExpenses' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.week': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.week',
+                            types: {
+                                $push: {
+                                    type: 'SHIFT',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            week: { $concat: ['Week ', { $toString: '$_id' }] },
+                            types: 1,
+                        },
+                    },
+                ],
+                monthlyExpenseCurrentQuarter: [
+                    {
+                        $match: {
+                            start: { $gte: startOfQuarter, $lte: endOfQuarter },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                month: { $month: '$start' },
+                            },
+                            totalExpense: { $sum: '$expenses.totalShiftExpenses' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.month': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.month',
+                            types: {
+                                $push: {
+                                    type: 'SHIFT',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            month: {
+                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+                            },
+                            types: 1,
+                        },
+                    },
+                ],
+                monthlyExpenseCurrentYear: [
+                    {
+                        $match: {
+                            start: { $gte: startOfYear, $lte: endOfYear },
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: {
+                                month: { $month: '$start' },
+                            },
+                            totalExpense: { $sum: '$expenses.totalShiftExpenses' },
+                        },
+                    },
+                    {
+                        $sort: { '_id.month': 1 },
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.month',
+                            types: {
+                                $push: {
+                                    type: 'SHIFT',
+                                    totalExpense: '$totalExpense',
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            month: {
+                                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+                            },
+                            types: 1,
+                        },
+                    },
+                ],
+            },
+        },
+    ]).exec();
+    const expenseGraphSet = expenseGraphData.length > 0 ? expenseGraphData[0] : {};
+    const shiftExpenseGraphSet = shiftExpenseGraphData.length > 0 ? shiftExpenseGraphData[0] : {};
+    const mergedExpenseGraphSet = mergeExpenseData(expenseGraphSet, shiftExpenseGraphSet);
+    return { expenseGraphSet, shiftExpenseGraphSet, mergedExpenseGraphSet };
 };
 const getExpenseById = async (req, res, next) => {
     try {
@@ -505,5 +781,36 @@ exports.default = {
     addExpense: exports.addExpense,
     updateExpense: exports.updateExpense,
     deleteExpense: exports.deleteExpense,
+};
+const mergeExpenseData = (expenseGraphData, shiftExpenseGraphData) => {
+    const mergeTypes = (types1, types2) => {
+        const typeMap = new Map();
+        types1.forEach((type) => typeMap.set(type.type, type));
+        types2.forEach((type) => (typeMap.has(type.type) ? (typeMap.get(type.type).totalExpense += type.totalExpense) : typeMap.set(type.type, type)));
+        return Array.from(typeMap.values());
+    };
+    const mergeByKey = (arr1, arr2, key) => {
+        const allData = [...arr1, ...arr2];
+        const dataMap = new Map();
+        allData.forEach((item) => {
+            const currentKey = item[key];
+            if (dataMap.has(currentKey)) {
+                const existingItem = dataMap.get(currentKey);
+                existingItem.types = mergeTypes(existingItem.types, item.types);
+            }
+            else {
+                dataMap.set(currentKey, Object.assign({}, item));
+            }
+        });
+        return Array.from(dataMap.values());
+    };
+    const mergedWeeklyExpenseCurrentMonth = mergeByKey(expenseGraphData.weeklyExpenseCurrentMonth, shiftExpenseGraphData.weeklyExpenseCurrentMonth, 'week');
+    const mergedMonthExpenseCurrentQuarter = mergeByKey(expenseGraphData.monthlyExpenseCurrentQuarter, shiftExpenseGraphData.monthlyExpenseCurrentQuarter, 'month');
+    const mergedMonthlyExpenseCurrentYear = mergeByKey(expenseGraphData.monthlyExpenseCurrentYear, shiftExpenseGraphData.monthlyExpenseCurrentYear, 'month');
+    return {
+        weeklyExpenseCurrentMonth: mergedWeeklyExpenseCurrentMonth,
+        monthlyExpenseCurrentQuarter: mergedMonthExpenseCurrentQuarter,
+        monthlyExpenseCurrentYear: mergedMonthlyExpenseCurrentYear,
+    };
 };
 //# sourceMappingURL=expenseController.js.map
