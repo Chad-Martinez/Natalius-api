@@ -13,6 +13,7 @@ type PieDataSet = {
 };
 
 export type PieData = {
+  week: PieDataSet[];
   month: PieDataSet[];
   quarter: PieDataSet[];
   year: PieDataSet[];
@@ -25,12 +26,18 @@ export type GraphType = {
 };
 
 export type GraphCurrentPeriod = {
-  month: string;
-  types: GraphType[];
+  label: string;
+  shift?: number;
+  misc?: number;
+  equipment?: number;
+  service?: number;
+  type: string;
 };
 
 export type GraphSet = {
-  weeklyExpenseCurrentMonth: GraphCurrentPeriod[];
-  monthlyExpenseCurrentQuarter: GraphCurrentPeriod[];
-  monthlyExpenseCurrentYear: GraphCurrentPeriod[];
+  week: GraphCurrentPeriod[];
+  month: GraphCurrentPeriod[];
+  quarter: GraphCurrentPeriod[];
+  year: GraphCurrentPeriod[];
+  defaultDataSet: string;
 };
