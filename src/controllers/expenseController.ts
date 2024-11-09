@@ -1,14 +1,30 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import Expense from '../models/Expense';
-import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
+import { HydratedDocument, PipelineStage, Types, isValidObjectId } from 'mongoose';
 import { IExpense } from '../interfaces/Expense.interface';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import dayjs from 'dayjs';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import utc from 'dayjs/plugin/utc';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import Shift from '../models/Shift';
-import { PieData, GraphSet, GraphType, GraphCurrentPeriod } from '../types/expense-types';
+import { PieData, GraphSet } from '../types/expense-types';
+import {
+  DAYS_OF_WEEK,
+  getEndOfMonth,
+  getEndOfQuarter,
+  getEndOfWeek,
+  getEndOfYear,
+  getStartOfMonth,
+  getStartOfQuarter,
+  getStartOfWeek,
+  getStartOfYear,
+  MONTHS_OF_YEAR,
+} from '../helpers/date-time-helpers';
+dayjs.extend(utc);
+dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);
 dayjs.extend(quarterOfYear);
 
@@ -18,9 +34,8 @@ export const getExpenseDashboardData = async (req: ICustomRequest, res: Response
 
     if (!userId || !isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const graphData = await getExpenseGraphData(userId);
+    const graphData = await getExpenseBarGraphData(userId);
     const pieData = await getExpensePieData(userId);
-    // console.log('pie data ', pieData);
 
     res.status(200).json({ graphData, pieData });
   } catch (error) {
@@ -162,20 +177,17 @@ export const getYtdExpenseWidgetData = async (userId: string): Promise<number> =
 };
 
 const getExpensePieData = async (userId: string) => {
-  const now = new Date();
+  const startOfWeek: Date = getStartOfWeek();
+  const endOfWeek: Date = getEndOfWeek();
 
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(startOfMonth);
-  endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+  const startOfYear: Date = getStartOfYear();
+  const endOfYear: Date = getEndOfYear();
 
-  const quarter = Math.floor((now.getMonth() + 3) / 3);
-  const startOfQuarter = new Date(now.getFullYear(), (quarter - 1) * 3, 1);
-  const endOfQuarter = new Date(startOfQuarter);
-  endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
+  const startOfMonth: Date = getStartOfMonth();
+  const endOfMonth: Date = getEndOfMonth();
 
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const endOfYear = new Date(startOfYear);
-  endOfYear.setFullYear(startOfYear.getFullYear() + 1);
+  const startOfQuarter: Date = getStartOfQuarter();
+  const endOfQuarter: Date = getEndOfQuarter();
 
   const expensePieData = await Expense.aggregate([
     {
@@ -185,6 +197,31 @@ const getExpensePieData = async (userId: string) => {
     },
     {
       $facet: {
+        week: [
+          {
+            $match: {
+              date: {
+                $gte: startOfWeek,
+                $lt: endOfWeek,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: '$type',
+              value: { $sum: '$amount' },
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              label: '$_id',
+              value: 1,
+              count: 1,
+            },
+          },
+        ],
         month: [
           {
             $match: {
@@ -265,19 +302,31 @@ const getExpensePieData = async (userId: string) => {
     {
       $addFields: {
         defaultDataSet: {
-          $cond: [
-            { $gt: [{ $size: { $filter: { input: '$month', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
-            'month',
-            {
-              $cond: [
-                { $gt: [{ $size: { $filter: { input: '$quarter', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
-                'quarter',
-                {
-                  $cond: [{ $gt: [{ $size: { $filter: { input: '$year', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] }, 'year', 'none'],
-                },
+          $let: {
+            vars: {
+              datasets: [
+                { name: 'Week', data: '$week' },
+                { name: 'Month', data: '$month' },
+                { name: 'Quarter', data: '$quarter' },
+                { name: 'Year', data: '$year' },
               ],
             },
-          ],
+            in: {
+              $reduce: {
+                input: '$$datasets',
+                initialValue: null,
+                in: {
+                  $cond: {
+                    if: {
+                      $and: [{ $eq: ['$$value', null] }, { $gt: [{ $size: '$$this.data' }, 0] }],
+                    },
+                    then: '$$this.name',
+                    else: '$$value',
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -291,6 +340,31 @@ const getExpensePieData = async (userId: string) => {
     },
     {
       $facet: {
+        week: [
+          {
+            $match: {
+              start: {
+                $gte: startOfWeek,
+                $lt: endOfWeek,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              value: { $sum: '$expenses.totalShiftExpenses' },
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              label: 'SHIFT',
+              value: 1,
+              count: 1,
+            },
+          },
+        ],
         month: [
           {
             $match: {
@@ -371,32 +445,45 @@ const getExpensePieData = async (userId: string) => {
     {
       $addFields: {
         defaultDataSet: {
-          $cond: [
-            { $gt: [{ $size: { $filter: { input: '$month', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
-            'month',
-            {
-              $cond: [
-                { $gt: [{ $size: { $filter: { input: '$quarter', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] },
-                'quarter',
-                {
-                  $cond: [{ $gt: [{ $size: { $filter: { input: '$year', as: 'item', cond: { $gt: ['$$item.value', 0] } } } }, 0] }, 'year', 'none'],
-                },
+          $let: {
+            vars: {
+              datasets: [
+                { name: 'Week', data: '$week' },
+                { name: 'Month', data: '$month' },
+                { name: 'Quarter', data: '$quarter' },
+                { name: 'Year', data: '$year' },
               ],
             },
-          ],
+            in: {
+              $reduce: {
+                input: '$$datasets',
+                initialValue: null,
+                in: {
+                  $cond: {
+                    if: {
+                      $and: [{ $eq: ['$$value', null] }, { $gt: [{ $size: '$$this.data' }, 0] }],
+                    },
+                    then: '$$this.name',
+                    else: '$$value',
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
   ]).exec();
 
   const combinedExpenses: PieData = {
+    week: [],
     month: [],
     quarter: [],
     year: [],
     defaultDataSet: '',
   };
 
-  ['month', 'quarter', 'year'].forEach((period) => {
+  ['week', 'month', 'quarter', 'year'].forEach((period) => {
     // @ts-ignore
     if (Array.isArray(expensePieData[0][period]) && Array.isArray(shiftExpensePieData[0][period])) {
       // @ts-ignore
@@ -412,223 +499,374 @@ const getExpensePieData = async (userId: string) => {
     }
   });
 
-  if (expensePieData[0].defaultDataSet === 'month' || shiftExpensePieData[0].defaultDataSet === 'month') {
-    combinedExpenses.defaultDataSet = 'month';
-  } else if (expensePieData[0].defaultDataSet === 'quarter' || shiftExpensePieData[0].defaultDataSet === 'quarter') {
-    combinedExpenses.defaultDataSet = 'quarter';
-  } else if (expensePieData[0].defaultDataSet === 'year' || shiftExpensePieData[0].defaultDataSet === 'year') {
-    combinedExpenses.defaultDataSet = 'year';
+  if (expensePieData[0].defaultDataSet === 'Week' || shiftExpensePieData[0].defaultDataSet === 'Week') {
+    combinedExpenses.defaultDataSet = 'Week';
+  } else if (expensePieData[0].defaultDataSet === 'Month' || shiftExpensePieData[0].defaultDataSet === 'Month') {
+    combinedExpenses.defaultDataSet = 'Month';
+  } else if (expensePieData[0].defaultDataSet === 'Quarter' || shiftExpensePieData[0].defaultDataSet === 'Quarter') {
+    combinedExpenses.defaultDataSet = 'Quarter';
+  } else if (expensePieData[0].defaultDataSet === 'Year' || shiftExpensePieData[0].defaultDataSet === 'Year') {
+    combinedExpenses.defaultDataSet = 'Year';
   }
 
   return combinedExpenses;
 };
 
-const getExpenseGraphData = async (userId: string) => {
-  const startOfWeek = new Date();
-  startOfWeek.setHours(0, 0, 0, 0);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+const getExpenseBarGraphData = async (userId: string) => {
+  const startOfWeek: Date = getStartOfWeek();
+  const endOfWeek: Date = getEndOfWeek();
 
-  const endOfWeek = new Date();
-  endOfWeek.setHours(23, 59, 59, 999);
-  endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
+  const startOfYear: Date = getStartOfYear();
+  const endOfYear: Date = getEndOfYear();
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  const startOfMonth: Date = getStartOfMonth();
+  const endOfMonth: Date = getEndOfMonth();
 
-  const endOfMonth = new Date(startOfMonth);
-  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-  endOfMonth.setMilliseconds(-1);
+  const startOfQuarter: Date = getStartOfQuarter();
+  const endOfQuarter: Date = getEndOfQuarter();
 
-  const currentMonth = startOfMonth.getMonth();
-  const startOfQuarter = new Date(startOfMonth);
-  startOfQuarter.setMonth(currentMonth - (currentMonth % 3));
+  const matchStage: PipelineStage = {
+    $match: {
+      userId: new Types.ObjectId(userId),
+    },
+  };
 
-  const endOfQuarter = new Date(startOfQuarter);
-  endOfQuarter.setMonth(startOfQuarter.getMonth() + 3);
-  endOfQuarter.setMilliseconds(-1);
+  const addDefaultDataSetField: PipelineStage = {
+    $addFields: {
+      defaultDataSet: {
+        $let: {
+          vars: {
+            datasets: [
+              { name: 'Week', data: '$week' },
+              { name: 'Month', data: '$month' },
+              { name: 'Quarter', data: '$quarter' },
+              { name: 'Year', data: '$year' },
+            ],
+          },
+          in: {
+            $reduce: {
+              input: '$$datasets',
+              initialValue: null,
+              in: {
+                $cond: {
+                  if: {
+                    $and: [{ $eq: ['$$value', null] }, { $gt: [{ $size: '$$this.data' }, 0] }],
+                  },
+                  then: '$$this.name',
+                  else: '$$value',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
 
-  const startOfYear = new Date(startOfMonth);
-  startOfYear.setMonth(0);
+  const dayOfWeekLabel: PipelineStage = {
+    $addFields: {
+      label: {
+        $arrayElemAt: [DAYS_OF_WEEK, { $subtract: ['$dayOfWeek', 1] }],
+      },
+    },
+  };
 
-  const endOfYear = new Date(startOfYear);
-  endOfYear.setFullYear(startOfYear.getFullYear() + 1);
-  endOfYear.setMilliseconds(-1);
+  const weekOfMonthLabel: PipelineStage = {
+    $addFields: {
+      label: {
+        $concat: ['Week ', { $toString: '$weekOfMonth' }],
+      },
+    },
+  };
 
-  const monthsOfYear = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthOfYearLabel: PipelineStage = {
+    $addFields: {
+      label: {
+        $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$month', 1] }],
+      },
+    },
+  };
+
+  const replaceRoot: PipelineStage = {
+    $replaceRoot: {
+      newRoot: {
+        $mergeObjects: [
+          '$typeAmount',
+          {
+            label: '$label',
+            type: '$type',
+          },
+        ],
+      },
+    },
+  };
+
+  const typeToObject: PipelineStage = {
+    $project: {
+      _id: 0,
+      label: '$_id.label',
+      type: '$_id.type',
+      typeAmount: {
+        $arrayToObject: {
+          $map: {
+            input: ['$_id.type'],
+            as: 'type',
+            in: {
+              k: { $toLower: '$$type' },
+              v: '$total',
+            },
+          },
+        },
+      },
+    },
+  };
 
   const expenseGraphData = await Expense.aggregate([
-    {
-      $match: {
-        userId: new Types.ObjectId(userId),
-      },
-    },
+    matchStage,
     {
       $facet: {
-        weeklyExpenseCurrentMonth: [
+        week: [
           {
             $match: {
-              date: { $gte: startOfMonth, $lte: endOfMonth },
-            },
-          },
-          {
-            $group: {
-              _id: {
-                week: { $week: '$date' },
-                type: '$type',
-              },
-              totalExpense: { $sum: '$amount' },
-            },
-          },
-          {
-            $sort: { '_id.week': 1 },
-          },
-          {
-            $group: {
-              _id: '$_id.week',
-              types: {
-                $push: {
-                  type: '$_id.type',
-                  totalExpense: '$totalExpense',
-                },
+              date: {
+                $gte: startOfWeek,
+                $lte: endOfWeek,
               },
             },
           },
           {
             $project: {
-              _id: 0,
-              week: { $concat: ['Week ', { $toString: '$_id' }] },
-              types: 1,
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+              day: { $dayOfMonth: '$date' },
+              dayOfWeek: { $dayOfWeek: '$date' },
+              amount: 1,
+              type: 1,
+            },
+          },
+          dayOfWeekLabel,
+          {
+            $group: {
+              _id: {
+                year: '$year',
+                month: '$month',
+                day: '$day',
+                type: '$type',
+                label: '$label',
+              },
+              total: { $sum: '$amount' },
+            },
+          },
+          typeToObject,
+          replaceRoot,
+          {
+            $sort: {
+              year: 1,
+              month: 1,
+              day: 1,
             },
           },
         ],
-        monthlyExpenseCurrentQuarter: [
+        month: [
           {
             $match: {
-              date: { $gte: startOfQuarter, $lte: endOfQuarter },
-            },
-          },
-          {
-            $group: {
-              _id: {
-                month: { $month: '$date' },
-                type: '$type',
-              },
-              totalExpense: { $sum: '$amount' },
-            },
-          },
-          {
-            $sort: { '_id.month': 1 },
-          },
-          {
-            $group: {
-              _id: '$_id.month',
-              types: {
-                $push: {
-                  type: '$_id.type',
-                  totalExpense: '$totalExpense',
-                },
+              date: {
+                $gte: startOfMonth,
+                $lte: endOfMonth,
               },
             },
           },
           {
             $project: {
-              _id: 0,
-              month: {
-                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+              day: { $dayOfMonth: '$date' },
+              weekOfMonth: { $ceil: { $divide: [{ $dayOfMonth: '$date' }, 7] } },
+              amount: 1,
+              type: 1,
+            },
+          },
+          weekOfMonthLabel,
+          {
+            $group: {
+              _id: {
+                year: '$year',
+                month: '$month',
+                day: '$day',
+                type: '$type',
+                label: '$label',
               },
-              types: 1,
+              total: { $sum: '$amount' },
+            },
+          },
+          typeToObject,
+          replaceRoot,
+          {
+            $sort: {
+              year: 1,
+              month: 1,
+              day: 1,
             },
           },
         ],
-        monthlyExpenseCurrentYear: [
+        quarter: [
           {
             $match: {
-              date: { $gte: startOfYear, $lte: endOfYear },
-            },
-          },
-          {
-            $group: {
-              _id: {
-                month: { $month: '$date' },
-                type: '$type',
-              },
-              totalExpense: { $sum: '$amount' },
-            },
-          },
-          {
-            $sort: { '_id.month': 1 },
-          },
-          {
-            $group: {
-              _id: '$_id.month',
-              types: {
-                $push: {
-                  type: '$_id.type',
-                  totalExpense: '$totalExpense',
-                },
+              date: {
+                $gte: startOfQuarter,
+                $lte: endOfQuarter,
               },
             },
           },
           {
             $project: {
-              _id: 0,
-              month: {
-                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+              amount: 1,
+              type: 1,
+            },
+          },
+          monthOfYearLabel,
+          {
+            $group: {
+              _id: {
+                year: '$year',
+                month: '$month',
+                type: '$type',
+                label: '$label',
               },
-              types: 1,
+              total: { $sum: '$amount' },
+            },
+          },
+          typeToObject,
+          replaceRoot,
+          {
+            $sort: {
+              year: 1,
+              month: 1,
+            },
+          },
+        ],
+        year: [
+          {
+            $match: {
+              date: {
+                $gte: startOfYear,
+                $lte: endOfYear,
+              },
+            },
+          },
+          {
+            $project: {
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+              amount: 1,
+              type: 1,
+            },
+          },
+          monthOfYearLabel,
+          {
+            $group: {
+              _id: {
+                year: '$year',
+                month: '$month',
+                type: '$type',
+                label: '$label',
+              },
+              total: { $sum: '$amount' },
+            },
+          },
+          typeToObject,
+          replaceRoot,
+          {
+            $sort: {
+              year: 1,
+              month: 1,
             },
           },
         ],
       },
     },
+    addDefaultDataSetField,
   ]).exec();
 
   const shiftExpenseGraphData = await Shift.aggregate([
-    {
-      $match: {
-        userId: new Types.ObjectId(userId),
-      },
-    },
+    matchStage,
     {
       $facet: {
-        weeklyExpenseCurrentMonth: [
+        week: [
+          {
+            $match: {
+              start: {
+                $gte: startOfWeek,
+                $lte: endOfWeek,
+              },
+            },
+          },
+          {
+            $project: {
+              year: { $year: '$start' },
+              month: { $month: '$start' },
+              day: { $dayOfMonth: '$start' },
+              dayOfWeek: { $dayOfWeek: '$start' },
+              expenses: 1,
+            },
+          },
+          dayOfWeekLabel,
+          {
+            $group: {
+              _id: {
+                label: '$label',
+                type: '$type',
+              },
+              shift: { $sum: '$expenses.totalShiftExpenses' },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              label: '$_id.label',
+              type: 'SHIFT',
+              shift: 1,
+            },
+          },
+        ],
+        month: [
           {
             $match: {
               start: { $gte: startOfMonth, $lte: endOfMonth },
             },
           },
           {
+            $project: {
+              year: { $year: '$start' },
+              month: { $month: '$start' },
+              day: { $dayOfMonth: '$start' },
+              weekOfMonth: { $ceil: { $divide: [{ $dayOfMonth: '$start' }, 7] } },
+              expenses: 1,
+            },
+          },
+          weekOfMonthLabel,
+          {
             $group: {
               _id: {
                 week: { $week: '$start' },
+                label: '$label',
+                type: 'SHIFT',
               },
-              totalExpense: { $sum: '$expenses.totalShiftExpenses' },
-            },
-          },
-          {
-            $sort: { '_id.week': 1 },
-          },
-          {
-            $group: {
-              _id: '$_id.week',
-              types: {
-                $push: {
-                  type: 'SHIFT',
-                  totalExpense: '$totalExpense',
-                },
-              },
+              shift: { $sum: '$expenses.totalShiftExpenses' },
             },
           },
           {
             $project: {
               _id: 0,
-              week: { $concat: ['Week ', { $toString: '$_id' }] },
-              types: 1,
+              label: '$_id.label',
+              type: 'SHIFT',
+              shift: 1,
             },
           },
         ],
-        monthlyExpenseCurrentQuarter: [
+        quarter: [
           {
             $match: {
               start: { $gte: startOfQuarter, $lte: endOfQuarter },
@@ -639,34 +877,24 @@ const getExpenseGraphData = async (userId: string) => {
               _id: {
                 month: { $month: '$start' },
               },
-              totalExpense: { $sum: '$expenses.totalShiftExpenses' },
+              shift: { $sum: '$expenses.totalShiftExpenses' },
             },
           },
           {
             $sort: { '_id.month': 1 },
           },
           {
-            $group: {
-              _id: '$_id.month',
-              types: {
-                $push: {
-                  type: 'SHIFT',
-                  totalExpense: '$totalExpense',
-                },
-              },
-            },
-          },
-          {
             $project: {
               _id: 0,
-              month: {
-                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              label: {
+                $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$_id.month', 1] }],
               },
-              types: 1,
+              type: 'SHIFT',
+              shift: 1,
             },
           },
         ],
-        monthlyExpenseCurrentYear: [
+        year: [
           {
             $match: {
               start: { $gte: startOfYear, $lte: endOfYear },
@@ -677,43 +905,43 @@ const getExpenseGraphData = async (userId: string) => {
               _id: {
                 month: { $month: '$start' },
               },
-              totalExpense: { $sum: '$expenses.totalShiftExpenses' },
+              shift: { $sum: '$expenses.totalShiftExpenses' },
             },
           },
           {
             $sort: { '_id.month': 1 },
           },
           {
-            $group: {
-              _id: '$_id.month',
-              types: {
-                $push: {
-                  type: 'SHIFT',
-                  totalExpense: '$totalExpense',
-                },
-              },
-            },
-          },
-          {
             $project: {
               _id: 0,
-              month: {
-                $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }],
+              label: {
+                $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$_id.month', 1] }],
               },
-              types: 1,
+              type: 'SHIFT',
+              shift: 1,
             },
           },
         ],
       },
     },
-  ]).exec();
+    addDefaultDataSetField,
+  ] as PipelineStage[]).exec();
 
-  const expenseGraphSet = expenseGraphData.length > 0 ? (expenseGraphData[0] as GraphSet) : ({} as GraphSet);
-  const shiftExpenseGraphSet = shiftExpenseGraphData.length > 0 ? (shiftExpenseGraphData[0] as GraphSet) : ({} as GraphSet);
+  const expenseBarGraphSet = expenseGraphData.length > 0 ? (expenseGraphData[0] as GraphSet) : ({} as GraphSet);
+  const shiftExpenseBarGraphSet = shiftExpenseGraphData.length > 0 ? (shiftExpenseGraphData[0] as GraphSet) : ({} as GraphSet);
 
-  const mergedExpenseGraphSet = mergeExpenseData(expenseGraphSet, shiftExpenseGraphSet);
+  const mergedExpenseBarGraphSet: GraphSet = mergeDataSets(expenseBarGraphSet, shiftExpenseBarGraphSet);
 
-  return { expenseGraphSet, shiftExpenseGraphSet, mergedExpenseGraphSet };
+  if (expenseBarGraphSet.defaultDataSet === 'Week' || shiftExpenseBarGraphSet.defaultDataSet === 'Week') {
+    mergedExpenseBarGraphSet.defaultDataSet = 'Week';
+  } else if (expenseBarGraphSet.defaultDataSet === 'Month' || shiftExpenseBarGraphSet.defaultDataSet === 'Month') {
+    mergedExpenseBarGraphSet.defaultDataSet = 'Month';
+  } else if (expenseBarGraphSet.defaultDataSet === 'Quarter' || shiftExpenseBarGraphSet.defaultDataSet === 'Quarter') {
+    mergedExpenseBarGraphSet.defaultDataSet = 'Quarter';
+  } else if (expenseBarGraphSet.defaultDataSet === 'Year' || shiftExpenseBarGraphSet.defaultDataSet === 'Year') {
+    mergedExpenseBarGraphSet.defaultDataSet = 'Year';
+  }
+  return { expenseBarGraphSet, shiftExpenseBarGraphSet, mergedExpenseBarGraphSet };
 };
 
 export const getExpenseById: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -820,64 +1048,21 @@ export default {
   getExpensesByUser,
   getPaginatedExpenses,
   getYtdExpenseWidgetData,
-  getExpenseGraphData,
+  getExpenseBarGraphData,
   getExpenseById,
   addExpense,
   updateExpense,
   deleteExpense,
 };
 
-const mergeExpenseData = (expenseGraphData: GraphSet, shiftExpenseGraphData: GraphSet) => {
-  const mergeTypes = (types1: GraphType[], types2: GraphType[]) => {
-    const typeMap = new Map();
+const mergeDataSets = <T extends Object>(setOne: T, setTwo: T) => {
+  const mergedSets: Partial<{ [K in keyof T]: T[K][] }> = {};
 
-    types1.forEach((type) => typeMap.set(type.type, type));
+  (['week', 'month', 'quarter', 'year'] as Array<keyof T>).forEach((period) => {
+    const set1 = (setOne[period] || []) as Array<T[keyof T]>;
+    const set2 = (setTwo[period] || []) as Array<T[keyof T]>;
+    mergedSets[period] = [...set1, ...set2];
+  });
 
-    types2.forEach((type) => (typeMap.has(type.type) ? (typeMap.get(type.type).totalExpense += type.totalExpense) : typeMap.set(type.type, type)));
-
-    return Array.from(typeMap.values());
-  };
-
-  const mergeByKey = (arr1: GraphCurrentPeriod[], arr2: GraphCurrentPeriod[], key: string) => {
-    const allData = [...arr1, ...arr2];
-
-    const dataMap = new Map();
-
-    allData.forEach((item: GraphCurrentPeriod) => {
-      // @ts-ignore
-      const currentKey = item[key];
-      if (dataMap.has(currentKey)) {
-        const existingItem = dataMap.get(currentKey);
-        existingItem.types = mergeTypes(existingItem.types, item.types);
-      } else {
-        dataMap.set(currentKey, { ...item });
-      }
-    });
-
-    return Array.from(dataMap.values());
-  };
-
-  const mergedWeeklyExpenseCurrentMonth = mergeByKey(
-    expenseGraphData.weeklyExpenseCurrentMonth,
-    shiftExpenseGraphData.weeklyExpenseCurrentMonth,
-    'week',
-  );
-
-  const mergedMonthExpenseCurrentQuarter = mergeByKey(
-    expenseGraphData.monthlyExpenseCurrentQuarter,
-    shiftExpenseGraphData.monthlyExpenseCurrentQuarter,
-    'month',
-  );
-
-  const mergedMonthlyExpenseCurrentYear = mergeByKey(
-    expenseGraphData.monthlyExpenseCurrentYear,
-    shiftExpenseGraphData.monthlyExpenseCurrentYear,
-    'month',
-  );
-
-  return {
-    weeklyExpenseCurrentMonth: mergedWeeklyExpenseCurrentMonth,
-    monthlyExpenseCurrentQuarter: mergedMonthExpenseCurrentQuarter,
-    monthlyExpenseCurrentYear: mergedMonthlyExpenseCurrentYear,
-  };
+  return mergedSets as GraphSet;
 };
