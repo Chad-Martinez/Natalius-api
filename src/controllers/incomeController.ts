@@ -403,10 +403,10 @@ export const getIncomeGraphData = async (userId: string) => {
           $let: {
             vars: {
               datasets: [
-                { name: 'week', data: '$week' },
-                { name: 'month', data: '$month' },
-                { name: 'quarter', data: '$quarter' },
-                { name: 'year', data: '$year' },
+                { name: 'Week', data: '$week' },
+                { name: 'Month', data: '$month' },
+                { name: 'Quarter', data: '$quarter' },
+                { name: 'Year', data: '$year' },
               ],
             },
             in: {
