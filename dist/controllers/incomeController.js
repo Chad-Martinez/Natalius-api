@@ -10,6 +10,7 @@ const Shift_1 = __importDefault(require("../models/Shift"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const isBetween_1 = __importDefault(require("dayjs/plugin/isBetween"));
 const sprintController_1 = require("./sprintController");
+const date_time_helpers_1 = require("../helpers/date-time-helpers");
 dayjs_1.default.extend(isBetween_1.default);
 const getIncomeDashboardData = async (req, res, next) => {
     try {
@@ -124,22 +125,14 @@ const getYtdIncomeWidgetData = async (userId) => {
 };
 exports.getYtdIncomeWidgetData = getYtdIncomeWidgetData;
 const getIncomeGraphData = async (userId) => {
-    const startOfWeek = new Date();
-    startOfWeek.setHours(0, 0, 0, 0);
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    const endOfWeek = new Date();
-    endOfWeek.setHours(23, 59, 59, 999);
-    endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const startOfYear = new Date(currentYear, 0, 1);
-    const endOfYear = new Date(currentYear + 1, 0, 1);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const startOfQuarter = new Date(currentYear, Math.floor(now.getMonth() / 3) * 3, 1);
-    const endOfQuarter = new Date(startOfQuarter.getFullYear(), startOfQuarter.getMonth() + 3, 0);
-    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthsOfYear = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const startOfWeek = (0, date_time_helpers_1.getStartOfWeek)();
+    const endOfWeek = (0, date_time_helpers_1.getEndOfWeek)();
+    const startOfYear = (0, date_time_helpers_1.getStartOfYear)();
+    const endOfYear = (0, date_time_helpers_1.getEndOfYear)();
+    const startOfMonth = (0, date_time_helpers_1.getStartOfMonth)();
+    const endOfMonth = (0, date_time_helpers_1.getEndOfMonth)();
+    const startOfQuarter = (0, date_time_helpers_1.getStartOfQuarter)();
+    const endOfQuarter = (0, date_time_helpers_1.getEndOfQuarter)();
     const incomeGraphData = await Shift_1.default.aggregate([
         {
             $match: {
@@ -167,7 +160,7 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            day: { $arrayElemAt: [daysOfWeek, { $subtract: ['$_id', 1] }] },
+                            day: { $arrayElemAt: [date_time_helpers_1.DAYS_OF_WEEK, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
@@ -219,7 +212,7 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            month: { $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }] },
+                            month: { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
@@ -237,7 +230,7 @@ const getIncomeGraphData = async (userId) => {
                     {
                         $project: {
                             _id: 0,
-                            month: { $arrayElemAt: [monthsOfYear, { $subtract: ['$_id', 1] }] },
+                            month: { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$_id', 1] }] },
                             total: 1,
                         },
                     },
@@ -253,14 +246,14 @@ const getIncomeGraphData = async (userId) => {
                         in: {
                             $let: {
                                 vars: {
-                                    dayName: { $arrayElemAt: [daysOfWeek, '$$dayOffset'] },
+                                    dayName: { $arrayElemAt: [date_time_helpers_1.DAYS_OF_WEEK, '$$dayOffset'] },
                                     dailyIncome: {
                                         $arrayElemAt: [
                                             {
                                                 $filter: {
                                                     input: '$week',
                                                     as: 'dayIncome',
-                                                    cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [daysOfWeek, '$$dayOffset'] }] },
+                                                    cond: { $eq: ['$$dayIncome.day', { $arrayElemAt: [date_time_helpers_1.DAYS_OF_WEEK, '$$dayOffset'] }] },
                                                 },
                                             },
                                             0,
@@ -340,7 +333,7 @@ const getIncomeGraphData = async (userId) => {
                                                         $filter: {
                                                             input: '$quarter',
                                                             as: 'monthIncome',
-                                                            cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] }] },
+                                                            cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$$monthOffset', 1] }] }] },
                                                         },
                                                     },
                                                     0,
@@ -348,7 +341,7 @@ const getIncomeGraphData = async (userId) => {
                                             },
                                         },
                                         in: {
-                                            label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$monthOffset', 1] }] },
+                                            label: { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$$monthOffset', 1] }] },
                                             total: { $ifNull: ['$$monthIncome.total', 0] },
                                         },
                                     },
@@ -375,7 +368,7 @@ const getIncomeGraphData = async (userId) => {
                                                         $filter: {
                                                             input: '$year',
                                                             as: 'monthIncome',
-                                                            cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] }] },
+                                                            cond: { $eq: ['$$monthIncome.month', { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$$month', 1] }] }] },
                                                         },
                                                     },
                                                     0,
@@ -383,7 +376,7 @@ const getIncomeGraphData = async (userId) => {
                                             },
                                         },
                                         in: {
-                                            label: { $arrayElemAt: [monthsOfYear, { $subtract: ['$$month', 1] }] },
+                                            label: { $arrayElemAt: [date_time_helpers_1.MONTHS_OF_YEAR, { $subtract: ['$$month', 1] }] },
                                             total: { $ifNull: ['$$monthIncome.total', 0] },
                                         },
                                     },
@@ -396,10 +389,10 @@ const getIncomeGraphData = async (userId) => {
                     $let: {
                         vars: {
                             datasets: [
-                                { name: 'week', data: '$week' },
-                                { name: 'month', data: '$month' },
-                                { name: 'quarter', data: '$quarter' },
-                                { name: 'year', data: '$year' },
+                                { name: 'Week', data: '$week' },
+                                { name: 'Month', data: '$month' },
+                                { name: 'Quarter', data: '$quarter' },
+                                { name: 'Year', data: '$year' },
                             ],
                         },
                         in: {
