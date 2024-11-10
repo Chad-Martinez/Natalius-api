@@ -222,11 +222,4 @@ const updateClub = async (req, res, next) => {
     }
 };
 exports.updateClub = updateClub;
-exports.default = {
-    getClubsByUser: exports.getClubsByUser,
-    getClubNames: exports.getClubNames,
-    getClubById: exports.getClubById,
-    addClub: exports.addClub,
-    updateClub: exports.updateClub,
-};
 //# sourceMappingURL=clubController.js.map

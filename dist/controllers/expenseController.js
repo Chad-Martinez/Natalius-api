@@ -991,17 +991,6 @@ const deleteExpense = async (req, res, next) => {
     }
 };
 exports.deleteExpense = deleteExpense;
-exports.default = {
-    getExpenseDashboardData: exports.getExpenseDashboardData,
-    getExpensesByUser: exports.getExpensesByUser,
-    getPaginatedExpenses: exports.getPaginatedExpenses,
-    getYtdExpenseWidgetData: exports.getYtdExpenseWidgetData,
-    getExpenseBarGraphData,
-    getExpenseById: exports.getExpenseById,
-    addExpense: exports.addExpense,
-    updateExpense: exports.updateExpense,
-    deleteExpense: exports.deleteExpense,
-};
 const mergeDataSets = (setOne, setTwo) => {
     const mergedSets = {};
     ['week', 'month', 'quarter', 'year'].forEach((period) => {

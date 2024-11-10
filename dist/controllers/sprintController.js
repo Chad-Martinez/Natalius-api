@@ -162,11 +162,4 @@ const deleteSprint = async (req, res, next) => {
     }
 };
 exports.deleteSprint = deleteSprint;
-exports.default = {
-    getActiveSprintByUser: exports.getActiveSprintByUser,
-    getSprintWidgetData: exports.getSprintWidgetData,
-    addSprint: exports.addSprint,
-    updateSprint: exports.updateSprint,
-    deleteSprint: exports.deleteSprint,
-};
 //# sourceMappingURL=sprintController.js.map

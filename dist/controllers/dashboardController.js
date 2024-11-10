@@ -14,7 +14,7 @@ const getDashboardData = async (req, res, next) => {
         const { userId } = req;
         if (!userId)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const upcomingShifts = await (0, shiftController_1.getShiftWidgetData)(userId);
+        const upcomingShifts = await (0, shiftController_1.getUpcomingShiftWidgetData)(userId);
         const ytdIncome = await (0, incomeController_1.getYtdIncomeWidgetData)(userId);
         const ytdExpenses = await (0, expenseController_1.getYtdExpenseWidgetData)(userId);
         const sprint = await (0, sprintController_1.getSprintWidgetData)(userId);
