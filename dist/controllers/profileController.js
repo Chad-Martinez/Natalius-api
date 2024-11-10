@@ -69,9 +69,4 @@ const updatePassword = async (req, res, next) => {
     }
 };
 exports.updatePassword = updatePassword;
-exports.default = {
-    getUserInfo: exports.getUserInfo,
-    updateUserInfo: exports.updateUserInfo,
-    updatePassword: exports.updatePassword,
-};
 //# sourceMappingURL=profileController.js.map

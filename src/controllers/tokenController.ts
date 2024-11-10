@@ -4,7 +4,7 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { IRefreshToken } from '../interfaces/RefreshToken.interface';
 import User from '../models/User';
 
-const handleRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const handleRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const cookies = req.cookies;
     if (!cookies?.jwt) throw new HttpErrorResponse(418, 'Forbidden - Missing token');
@@ -60,5 +60,3 @@ const handleRefreshToken = async (req: Request, res: Response, next: NextFunctio
     next(error);
   }
 };
-
-export default handleRefreshToken;

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.handleRefreshToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const User_1 = __importDefault(require("../models/User"));
@@ -52,5 +53,5 @@ const handleRefreshToken = async (req, res, next) => {
         next(error);
     }
 };
-exports.default = handleRefreshToken;
+exports.handleRefreshToken = handleRefreshToken;
 //# sourceMappingURL=tokenController.js.map

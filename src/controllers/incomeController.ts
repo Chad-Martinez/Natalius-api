@@ -533,10 +533,3 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
 
   return result[0];
 };
-
-export default {
-  getIncomeDashboardData,
-  getPaginatedIncome,
-  getYtdIncomeWidgetData,
-  getIncomeAverageWidgetData,
-};

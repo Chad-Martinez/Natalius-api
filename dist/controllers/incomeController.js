@@ -512,10 +512,4 @@ const getIncomeAverageWidgetData = async (userId) => {
     return result[0];
 };
 exports.getIncomeAverageWidgetData = getIncomeAverageWidgetData;
-exports.default = {
-    getIncomeDashboardData: exports.getIncomeDashboardData,
-    getPaginatedIncome: exports.getPaginatedIncome,
-    getYtdIncomeWidgetData: exports.getYtdIncomeWidgetData,
-    getIncomeAverageWidgetData: exports.getIncomeAverageWidgetData,
-};
 //# sourceMappingURL=incomeController.js.map

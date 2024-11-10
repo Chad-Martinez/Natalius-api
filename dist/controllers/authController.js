@@ -241,12 +241,4 @@ const verifyEmail = async (req, res, next) => {
     }
 };
 exports.verifyEmail = verifyEmail;
-exports.default = {
-    register: exports.register,
-    login: exports.login,
-    passwordResetEmail: exports.passwordResetEmail,
-    resetPassword: exports.resetPassword,
-    logout: exports.logout,
-    verifyEmail: exports.verifyEmail,
-};
 //# sourceMappingURL=authController.js.map

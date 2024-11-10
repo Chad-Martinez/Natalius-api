@@ -74,9 +74,3 @@ export const updatePassword: RequestHandler = async (req: ICustomRequest, res: R
     next(error);
   }
 };
-
-export default {
-  getUserInfo,
-  updateUserInfo,
-  updatePassword,
-};

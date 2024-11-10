@@ -91,10 +91,4 @@ const updateVendor = async (req, res, next) => {
     }
 };
 exports.updateVendor = updateVendor;
-exports.default = {
-    getVendorsByUser: exports.getVendorsByUser,
-    getVendorById: exports.getVendorById,
-    addVendor: exports.addVendor,
-    updateVendor: exports.updateVendor,
-};
 //# sourceMappingURL=vendorController.js.map

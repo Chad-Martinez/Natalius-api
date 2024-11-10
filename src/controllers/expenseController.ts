@@ -930,7 +930,7 @@ const getExpenseBarGraphData = async (userId: string) => {
   const expenseBarGraphSet = expenseGraphData.length > 0 ? (expenseGraphData[0] as GraphSet) : ({} as GraphSet);
   const shiftExpenseBarGraphSet = shiftExpenseGraphData.length > 0 ? (shiftExpenseGraphData[0] as GraphSet) : ({} as GraphSet);
 
-  const mergedExpenseBarGraphSet: GraphSet = mergeDataSets(expenseBarGraphSet, shiftExpenseBarGraphSet);
+  const mergedExpenseBarGraphSet: GraphSet = mergeDataSets<GraphSet>(expenseBarGraphSet, shiftExpenseBarGraphSet);
 
   if (expenseBarGraphSet.defaultDataSet === 'Week' || shiftExpenseBarGraphSet.defaultDataSet === 'Week') {
     mergedExpenseBarGraphSet.defaultDataSet = 'Week';
@@ -1041,18 +1041,6 @@ export const deleteExpense: RequestHandler = async (req: Request, res: Response,
     console.error('Expense Controller Error - DeleteExpense: ', error);
     next(error);
   }
-};
-
-export default {
-  getExpenseDashboardData,
-  getExpensesByUser,
-  getPaginatedExpenses,
-  getYtdExpenseWidgetData,
-  getExpenseBarGraphData,
-  getExpenseById,
-  addExpense,
-  updateExpense,
-  deleteExpense,
 };
 
 const mergeDataSets = <T extends Object>(setOne: T, setTwo: T) => {

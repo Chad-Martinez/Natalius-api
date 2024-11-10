@@ -276,12 +276,3 @@ export const verifyEmail: RequestHandler = async (req: Request, res: Response, n
     next(error);
   }
 };
-
-export default {
-  register,
-  login,
-  passwordResetEmail,
-  resetPassword,
-  logout,
-  verifyEmail,
-};
