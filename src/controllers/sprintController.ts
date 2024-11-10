@@ -171,11 +171,3 @@ export const deleteSprint = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
-
-export default {
-  getActiveSprintByUser,
-  getSprintWidgetData,
-  addSprint,
-  updateSprint,
-  deleteSprint,
-};

@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
-import { getShiftWidgetData } from './shiftController';
+import { getUpcomingShiftWidgetData } from './shiftController';
 import { getYtdIncomeWidgetData } from './incomeController';
 import { getYtdExpenseWidgetData } from './expenseController';
 import { getSprintWidgetData } from './sprintController';
@@ -11,7 +11,7 @@ export const getDashboardData = async (req: ICustomRequest, res: Response, next:
     const { userId } = req;
     if (!userId) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    const upcomingShifts = await getShiftWidgetData(userId);
+    const upcomingShifts = await getUpcomingShiftWidgetData(userId);
     const ytdIncome = await getYtdIncomeWidgetData(userId);
     const ytdExpenses = await getYtdExpenseWidgetData(userId);
     const sprint = await getSprintWidgetData(userId);

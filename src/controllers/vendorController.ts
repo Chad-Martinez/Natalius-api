@@ -96,10 +96,3 @@ export const updateVendor = async (req: Request, res: Response, next: NextFuncti
     }
   }
 };
-
-export default {
-  getVendorsByUser,
-  getVendorById,
-  addVendor,
-  updateVendor,
-};

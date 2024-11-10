@@ -229,11 +229,3 @@ export const updateClub = async (req: Request, res: Response, next: NextFunction
     }
   }
 };
-
-export default {
-  getClubsByUser,
-  getClubNames,
-  getClubById,
-  addClub,
-  updateClub,
-};
