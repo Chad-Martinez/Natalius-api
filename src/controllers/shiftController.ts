@@ -24,7 +24,7 @@ export const getActiveShiftsByClub = async (req: Request, res: Response, next: N
   }
 };
 
-export const getShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
+export const getUpcomingShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -34,6 +34,7 @@ export const getShiftWidgetData = async (userId: string): Promise<HydratedDocume
         $match: {
           userId: new Types.ObjectId(userId),
           start: { $gte: today },
+          shiftComplete: false,
         },
       },
       {
