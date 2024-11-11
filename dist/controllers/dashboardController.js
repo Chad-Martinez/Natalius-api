@@ -18,7 +18,8 @@ const getDashboardData = async (req, res, next) => {
         const ytdIncome = await (0, incomeController_1.getYtdIncomeWidgetData)(userId);
         const ytdExpenses = await (0, expenseController_1.getYtdExpenseWidgetData)(userId);
         const sprint = await (0, sprintController_1.getSprintWidgetData)(userId);
-        res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses });
+        const shiftPrediction = await (0, incomeController_1.perdictNextShiftIncome)(userId);
+        res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses, shiftPrediction });
     }
     catch (error) {
         console.error('Dashboard Controller Error: ', error);
