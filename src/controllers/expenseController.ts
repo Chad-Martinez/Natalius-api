@@ -219,6 +219,11 @@ const getExpensePieData = async (userId: string) => {
               label: '$_id',
               value: 1,
               count: 1,
+              id: {
+                $toLower: {
+                  $concat: [{ $toString: '$_id' }, '_id'],
+                },
+              },
             },
           },
         ],
@@ -244,6 +249,11 @@ const getExpensePieData = async (userId: string) => {
               label: '$_id',
               value: 1,
               count: 1,
+              id: {
+                $toLower: {
+                  $concat: [{ $toString: '$_id' }, '_id'],
+                },
+              },
             },
           },
         ],
@@ -269,6 +279,11 @@ const getExpensePieData = async (userId: string) => {
               label: '$_id',
               value: 1,
               count: 1,
+              id: {
+                $toLower: {
+                  $concat: [{ $toString: '$_id' }, '_id'],
+                },
+              },
             },
           },
         ],
@@ -294,6 +309,11 @@ const getExpensePieData = async (userId: string) => {
               label: '$_id',
               value: 1,
               count: 1,
+              id: {
+                $toLower: {
+                  $concat: [{ $toString: '$_id' }, '_id'],
+                },
+              },
             },
           },
         ],
@@ -362,6 +382,7 @@ const getExpensePieData = async (userId: string) => {
               label: 'SHIFT',
               value: 1,
               count: 1,
+              id: 'shift_id',
             },
           },
         ],
@@ -387,6 +408,7 @@ const getExpensePieData = async (userId: string) => {
               label: 'SHIFT',
               value: 1,
               count: 1,
+              id: 'shift_id',
             },
           },
         ],
@@ -412,6 +434,7 @@ const getExpensePieData = async (userId: string) => {
               label: 'SHIFT',
               value: 1,
               count: 1,
+              id: 'shift_id',
             },
           },
         ],
@@ -437,6 +460,7 @@ const getExpensePieData = async (userId: string) => {
               label: 'SHIFT',
               value: 1,
               count: 1,
+              id: 'shift_id',
             },
           },
         ],
