@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { Types, isValidObjectId } from 'mongoose';
+import { HydratedDocument, Types, isValidObjectId } from 'mongoose';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Shift from '../models/Shift';
@@ -20,6 +20,7 @@ import {
   getStartOfYear,
   MONTHS_OF_YEAR,
 } from '../helpers/date-time-helpers';
+import { IShift } from 'src/interfaces/Shift.interface';
 dayjs.extend(isBetween);
 
 export const getIncomeDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -30,8 +31,9 @@ export const getIncomeDashboardData = async (req: ICustomRequest, res: Response,
     const sprint: ISprint = await getSprintWidgetData(userId);
     const averages: IncomeAverages = await getIncomeAverageWidgetData(userId);
     const graphData = await getIncomeGraphData(userId);
+    const shiftPrediction = await perdictNextShiftIncome(userId);
 
-    res.status(200).json({ sprint, averages, graphData });
+    res.status(200).json({ sprint, averages, graphData, shiftPrediction });
   } catch (error) {
     console.error('Income Controller Error - IncomeDashboardData: ', error);
     next(error);
@@ -129,12 +131,12 @@ export const getYtdIncomeWidgetData = async (userId: string): Promise<number> =>
     {
       $group: {
         _id: null,
-        total: { $sum: '$income.amount' },
+        income: { $sum: '$income.amount' },
       },
     },
   ]).exec();
 
-  return ytdIncome.length > 0 ? ytdIncome[0].total : 0;
+  return ytdIncome.length > 0 ? ytdIncome[0].income : 0;
 };
 
 export const getIncomeGraphData = async (userId: string) => {
@@ -168,7 +170,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $dayOfWeek: '$start' },
-              total: { $sum: '$income.amount' },
+              income: { $sum: '$income.amount' },
             },
           },
           {
@@ -178,7 +180,7 @@ export const getIncomeGraphData = async (userId: string) => {
             $project: {
               _id: 0,
               day: { $arrayElemAt: [DAYS_OF_WEEK, { $subtract: ['$_id', 1] }] },
-              total: 1,
+              income: 1,
             },
           },
         ],
@@ -195,7 +197,7 @@ export const getIncomeGraphData = async (userId: string) => {
                 month: { $month: '$start' },
                 week: { $week: '$start' },
               },
-              total: { $sum: '$income.amount' },
+              income: { $sum: '$income.amount' },
             },
           },
           {
@@ -207,7 +209,7 @@ export const getIncomeGraphData = async (userId: string) => {
               year: '$_id.year',
               month: '$_id.month',
               week: '$_id.week',
-              total: 1,
+              income: 1,
             },
           },
         ],
@@ -220,7 +222,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $month: '$start' },
-              total: { $sum: '$income.amount' },
+              income: { $sum: '$income.amount' },
             },
           },
           {
@@ -230,7 +232,7 @@ export const getIncomeGraphData = async (userId: string) => {
             $project: {
               _id: 0,
               month: { $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$_id', 1] }] },
-              total: 1,
+              income: 1,
             },
           },
         ],
@@ -238,7 +240,7 @@ export const getIncomeGraphData = async (userId: string) => {
           {
             $group: {
               _id: { $month: '$start' },
-              total: { $sum: '$income.amount' },
+              income: { $sum: '$income.amount' },
             },
           },
           {
@@ -248,7 +250,7 @@ export const getIncomeGraphData = async (userId: string) => {
             $project: {
               _id: 0,
               month: { $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$_id', 1] }] },
-              total: 1,
+              income: 1,
             },
           },
         ],
@@ -279,7 +281,7 @@ export const getIncomeGraphData = async (userId: string) => {
                 },
                 in: {
                   label: '$$dayName',
-                  total: { $ifNull: ['$$dailyIncome.total', 0] },
+                  income: { $ifNull: ['$$dailyIncome.income', 0] },
                 },
               },
             },
@@ -322,7 +324,7 @@ export const getIncomeGraphData = async (userId: string) => {
                       year: { $year: '$$weekStart' },
                       month: { $month: '$$weekStart' },
                       label: { $concat: ['Week ', { $toString: { $add: ['$$weekOffset', 1] } }] },
-                      total: { $ifNull: ['$$weeklyIncome.total', 0] },
+                      income: { $ifNull: ['$$weeklyIncome.income', 0] },
                     },
                   },
                 },
@@ -359,7 +361,7 @@ export const getIncomeGraphData = async (userId: string) => {
                     },
                     in: {
                       label: { $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$$monthOffset', 1] }] },
-                      total: { $ifNull: ['$$monthIncome.total', 0] },
+                      income: { $ifNull: ['$$monthIncome.income', 0] },
                     },
                   },
                 },
@@ -394,7 +396,7 @@ export const getIncomeGraphData = async (userId: string) => {
                     },
                     in: {
                       label: { $arrayElemAt: [MONTHS_OF_YEAR, { $subtract: ['$$month', 1] }] },
-                      total: { $ifNull: ['$$monthIncome.total', 0] },
+                      income: { $ifNull: ['$$monthIncome.income', 0] },
                     },
                   },
                 },
@@ -421,7 +423,7 @@ export const getIncomeGraphData = async (userId: string) => {
                     if: {
                       $and: [
                         { $eq: ['$$value', null] },
-                        { $gt: [{ $size: { $filter: { input: '$$this.data', as: 'data', cond: { $gt: ['$$data.total', 0] } } } }, 0] },
+                        { $gt: [{ $size: { $filter: { input: '$$this.data', as: 'data', cond: { $gt: ['$$data.income', 0] } } } }, 0] },
                       ],
                     },
                     then: '$$this.name',
@@ -532,4 +534,89 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
   ]);
 
   return result[0];
+};
+
+export const perdictNextShiftIncome = async (userId: string): Promise<{ prediction: number; nextShift: Date } | null> => {
+  const nextShift: HydratedDocument<IShift> | null = await Shift.findOne({
+    userId: new Types.ObjectId(userId),
+    shiftComplete: false,
+  }).sort({ start: 1 });
+
+  if (!nextShift) {
+    return null;
+  }
+
+  const dayOfWeek = new Date(nextShift.start).getDay() + 1;
+
+  const result = await Shift.aggregate([
+    // Match completed shifts for the user
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        shiftComplete: true,
+      },
+    },
+
+    // Project necessary fields, including day of the week and income amount
+    {
+      $project: {
+        incomeAmount: '$income.amount',
+        dayOfWeek: { $dayOfWeek: '$start' },
+      },
+    },
+
+    // Filter for the specific day of the week (e.g., Friday)
+    {
+      $match: {
+        dayOfWeek: dayOfWeek,
+      },
+    },
+
+    // Sort by `incomeAmount` for median calculation
+    { $sort: { incomeAmount: 1 } },
+
+    // Group all income amounts into an array
+    {
+      $group: {
+        _id: '$userId',
+        incomeArray: { $push: '$incomeAmount' },
+      },
+    },
+
+    // Calculate the median income
+    {
+      $project: {
+        incomeMedian: {
+          $let: {
+            vars: { count: { $size: '$incomeArray' } },
+            in: {
+              $cond: [
+                { $eq: [{ $mod: ['$$count', 2] }, 0] },
+                {
+                  $avg: [
+                    { $arrayElemAt: ['$incomeArray', { $subtract: [{ $divide: ['$$count', 2] }, 1] }] },
+                    { $arrayElemAt: ['$incomeArray', { $divide: ['$$count', 2] }] },
+                  ],
+                },
+                {
+                  $arrayElemAt: ['$incomeArray', { $floor: { $divide: ['$$count', 2] } }],
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+
+    // Project final prediction based on the income median
+    {
+      $project: {
+        predictedIncomeNextShift: '$incomeMedian',
+      },
+    },
+  ]).exec();
+
+  const prediction = result[0].predictedIncomeNextShift;
+
+  return { prediction, nextShift: nextShift.start };
 };
