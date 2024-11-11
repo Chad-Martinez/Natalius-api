@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import HttpErrorResponse from '../classes/HttpErrorResponse';
 import { getUpcomingShiftWidgetData } from './shiftController';
-import { getYtdIncomeWidgetData } from './incomeController';
+import { getYtdIncomeWidgetData, perdictNextShiftIncome } from './incomeController';
 import { getYtdExpenseWidgetData } from './expenseController';
 import { getSprintWidgetData } from './sprintController';
 
@@ -15,8 +15,9 @@ export const getDashboardData = async (req: ICustomRequest, res: Response, next:
     const ytdIncome = await getYtdIncomeWidgetData(userId);
     const ytdExpenses = await getYtdExpenseWidgetData(userId);
     const sprint = await getSprintWidgetData(userId);
+    const shiftPrediction = await perdictNextShiftIncome(userId);
 
-    res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses });
+    res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses, shiftPrediction });
   } catch (error) {
     console.error('Dashboard Controller Error: ', error);
     next(error);
