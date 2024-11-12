@@ -8,6 +8,7 @@ import Club from '../models/Club';
 import { IClub } from '../interfaces/Club.interface';
 import Sprint from '../models/Sprint';
 import { ISprint } from 'src/interfaces/Sprint.interface';
+import dayjs from 'dayjs';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -26,7 +27,7 @@ export const getActiveShiftsByClub = async (req: Request, res: Response, next: N
 
 export const getUpcomingShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
   try {
-    const today = new Date();
+    const today = new Date(dayjs.utc().format());
     today.setHours(0, 0, 0, 0);
 
     const shifts: HydratedDocument<IShift>[] = await Shift.aggregate([
@@ -63,6 +64,7 @@ export const getUpcomingShiftWidgetData = async (userId: string): Promise<Hydrat
           clubDetails: 1,
           start: 1,
           end: 1,
+          timezone: 1,
           notes: 1,
           shiftComplete: 1,
         },
@@ -94,7 +96,7 @@ export const getShiftById = async (req: Request, res: Response, next: NextFuncti
 
 export const addShift = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { clubId, start, end, notes } = req.body;
+    const { clubId, start, end, timezone, notes } = req.body;
     const { userId } = req;
 
     const club: HydratedDocument<IClub> | null = await Club.findById(clubId);
@@ -105,6 +107,7 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
       clubId,
       start,
       end,
+      timezone,
       notes,
       userId,
     });

@@ -124,7 +124,7 @@ export const getYtdIncomeWidgetData = async (userId: string): Promise<number> =>
       $match: {
         userId: new Types.ObjectId(userId),
         start: {
-          $gte: new Date(dayjs().startOf('year').format('MM/DD/YY')),
+          $gte: getStartOfYear(),
         },
       },
     },
@@ -450,18 +450,13 @@ export const getIncomeGraphData = async (userId: string) => {
 };
 
 export const getIncomeAverageWidgetData = async (userId: string): Promise<IncomeAverages> => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const startOfCurrentYear = new Date(currentYear, 0, 1);
-  const endOfCurrentYear = new Date(currentYear + 1, 0, 1);
-
   const result = await Shift.aggregate([
     {
       $match: {
         userId: new Types.ObjectId(userId),
         start: {
-          $gte: startOfCurrentYear,
-          $lte: endOfCurrentYear,
+          $gte: getStartOfYear(),
+          $lte: getEndOfYear(),
         },
       },
     },
@@ -536,7 +531,9 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
   return result[0];
 };
 
-export const perdictNextShiftIncome = async (userId: string): Promise<{ prediction: number; nextShift: Date } | null> => {
+export const perdictNextShiftIncome = async (
+  userId: string,
+): Promise<{ prediction: number; nextShift: { start: Date; timezone: String } } | null> => {
   const nextShift: HydratedDocument<IShift> | null = await Shift.findOne({
     userId: new Types.ObjectId(userId),
     shiftComplete: false,
@@ -546,44 +543,33 @@ export const perdictNextShiftIncome = async (userId: string): Promise<{ predicti
     return null;
   }
 
-  const dayOfWeek = new Date(nextShift.start).getDay() + 1;
+  const dayOfWeek = dayjs.utc(nextShift.start).day() + 1;
 
   const result = await Shift.aggregate([
-    // Match completed shifts for the user
     {
       $match: {
         userId: new Types.ObjectId(userId),
         shiftComplete: true,
       },
     },
-
-    // Project necessary fields, including day of the week and income amount
     {
       $project: {
         incomeAmount: '$income.amount',
         dayOfWeek: { $dayOfWeek: '$start' },
       },
     },
-
-    // Filter for the specific day of the week (e.g., Friday)
     {
       $match: {
         dayOfWeek: dayOfWeek,
       },
     },
-
-    // Sort by `incomeAmount` for median calculation
     { $sort: { incomeAmount: 1 } },
-
-    // Group all income amounts into an array
     {
       $group: {
         _id: '$userId',
         incomeArray: { $push: '$incomeAmount' },
       },
     },
-
-    // Calculate the median income
     {
       $project: {
         incomeMedian: {
@@ -607,8 +593,6 @@ export const perdictNextShiftIncome = async (userId: string): Promise<{ predicti
         },
       },
     },
-
-    // Project final prediction based on the income median
     {
       $project: {
         predictedIncomeNextShift: '$incomeMedian',
@@ -618,5 +602,5 @@ export const perdictNextShiftIncome = async (userId: string): Promise<{ predicti
 
   const prediction = result[0].predictedIncomeNextShift;
 
-  return { prediction, nextShift: nextShift.start };
+  return { prediction, nextShift: { start: nextShift.start, timezone: nextShift.timezone } };
 };

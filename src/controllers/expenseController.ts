@@ -190,7 +190,7 @@ export const getYtdExpenseWidgetData = async (userId: string): Promise<number> =
       $match: {
         userId: new Types.ObjectId(userId),
         date: {
-          $gte: new Date(dayjs().startOf('year').format('MM/DD/YY')),
+          $gte: new Date(dayjs.utc().startOf('year').format('MM/DD/YY')),
         },
       },
     },

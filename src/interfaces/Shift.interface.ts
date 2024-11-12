@@ -22,6 +22,7 @@ export interface IShiftIncome {
 export interface IShiftBase {
   start: Date;
   end: Date;
+  timezone: String;
   notes: String;
   shiftComplete: boolean;
   clubId: Types.ObjectId;

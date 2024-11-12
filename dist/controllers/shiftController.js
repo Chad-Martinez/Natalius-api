@@ -9,6 +9,7 @@ const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorRespons
 const Shift_1 = __importDefault(require("../models/Shift"));
 const Club_1 = __importDefault(require("../models/Club"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
+const dayjs_1 = __importDefault(require("dayjs"));
 const getActiveShiftsByClub = async (req, res, next) => {
     try {
         const { clubId } = req.params;
@@ -25,7 +26,7 @@ const getActiveShiftsByClub = async (req, res, next) => {
 exports.getActiveShiftsByClub = getActiveShiftsByClub;
 const getUpcomingShiftWidgetData = async (userId) => {
     try {
-        const today = new Date();
+        const today = new Date(dayjs_1.default.utc().format());
         today.setHours(0, 0, 0, 0);
         const shifts = await Shift_1.default.aggregate([
             {
@@ -61,6 +62,7 @@ const getUpcomingShiftWidgetData = async (userId) => {
                     clubDetails: 1,
                     start: 1,
                     end: 1,
+                    timezone: 1,
                     notes: 1,
                     shiftComplete: 1,
                 },
@@ -91,7 +93,7 @@ const getShiftById = async (req, res, next) => {
 exports.getShiftById = getShiftById;
 const addShift = async (req, res, next) => {
     try {
-        const { clubId, start, end, notes } = req.body;
+        const { clubId, start, end, timezone, notes } = req.body;
         const { userId } = req;
         const club = await Club_1.default.findById(clubId);
         if (!club)
@@ -100,6 +102,7 @@ const addShift = async (req, res, next) => {
             clubId,
             start,
             end,
+            timezone,
             notes,
             userId,
         });

@@ -172,7 +172,7 @@ const getYtdExpenseWidgetData = async (userId) => {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
                 date: {
-                    $gte: new Date((0, dayjs_1.default)().startOf('year').format('MM/DD/YY')),
+                    $gte: new Date(dayjs_1.default.utc().startOf('year').format('MM/DD/YY')),
                 },
             },
         },
