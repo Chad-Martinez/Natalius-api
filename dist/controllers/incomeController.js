@@ -111,7 +111,7 @@ const getYtdIncomeWidgetData = async (userId) => {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
                 start: {
-                    $gte: new Date((0, dayjs_1.default)().startOf('year').format('MM/DD/YY')),
+                    $gte: (0, date_time_helpers_1.getStartOfYear)(),
                 },
             },
         },
@@ -429,17 +429,13 @@ const getIncomeGraphData = async (userId) => {
 };
 exports.getIncomeGraphData = getIncomeGraphData;
 const getIncomeAverageWidgetData = async (userId) => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const startOfCurrentYear = new Date(currentYear, 0, 1);
-    const endOfCurrentYear = new Date(currentYear + 1, 0, 1);
     const result = await Shift_1.default.aggregate([
         {
             $match: {
                 userId: new mongoose_1.Types.ObjectId(userId),
                 start: {
-                    $gte: startOfCurrentYear,
-                    $lte: endOfCurrentYear,
+                    $gte: (0, date_time_helpers_1.getStartOfYear)(),
+                    $lte: (0, date_time_helpers_1.getEndOfYear)(),
                 },
             },
         },
@@ -521,7 +517,7 @@ const perdictNextShiftIncome = async (userId) => {
     if (!nextShift) {
         return null;
     }
-    const dayOfWeek = new Date(nextShift.start).getDay() + 1;
+    const dayOfWeek = dayjs_1.default.utc(nextShift.start).day() + 1;
     const result = await Shift_1.default.aggregate([
         {
             $match: {
@@ -577,7 +573,7 @@ const perdictNextShiftIncome = async (userId) => {
         },
     ]).exec();
     const prediction = result[0].predictedIncomeNextShift;
-    return { prediction, nextShift: nextShift.start };
+    return { prediction, nextShift: { start: nextShift.start, timezone: nextShift.timezone } };
 };
 exports.perdictNextShiftIncome = perdictNextShiftIncome;
 //# sourceMappingURL=incomeController.js.map

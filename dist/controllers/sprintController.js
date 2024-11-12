@@ -65,7 +65,7 @@ const addSprint = async (req, res, next) => {
     try {
         const { start, goal } = req.body;
         const { userId } = req;
-        const startDate = (0, dayjs_1.default)(start).hour(0).minute(0).second(0).millisecond(0);
+        const startDate = dayjs_1.default.utc(start).hour(0).minute(0).second(0).millisecond(0);
         const endDate = startDate.add(2, 'week');
         const shifts = await Shift_1.default.find({ userId: userId, start: { $gte: startDate, $lte: endDate } });
         const mappedIds = shifts.map((shift) => shift._id);
@@ -100,7 +100,7 @@ const updateSprint = async (req, res, next) => {
         const sprint = await Sprint_1.default.findById(_id);
         if (!sprint)
             throw new HttpErrorResponse_1.default(404, 'Requested resource not found');
-        const startDate = (0, dayjs_1.default)(start).hour(0).minute(0).second(0).millisecond(0);
+        const startDate = dayjs_1.default.utc(start).hour(0).minute(0).second(0).millisecond(0);
         const endDate = startDate.add(2, 'week');
         sprint.start = startDate.toDate();
         sprint.end = endDate.toDate();
