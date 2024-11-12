@@ -53,6 +53,7 @@ const getExpensesByUser = async (req, res, next) => {
 };
 exports.getExpensesByUser = getExpensesByUser;
 const getPaginatedExpenses = async (req, res, next) => {
+    var _a, _b, _c;
     try {
         const { page, limit } = req.query;
         const { userId } = req;
@@ -61,58 +62,103 @@ const getPaginatedExpenses = async (req, res, next) => {
         if (!page || !limit) {
             throw new HttpErrorResponse_1.default(400, 'Missing proper query parameters');
         }
-        const count = await Expense_1.default.find({ userId }).countDocuments();
-        if (count) {
-            const expenses = await Expense_1.default.aggregate([
-                {
-                    $match: {
-                        userId: new mongoose_1.Types.ObjectId(userId),
-                    },
+        const expensePipeline = [
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
                 },
-                {
-                    $sort: {
-                        date: -1,
-                    },
+            },
+            {
+                $lookup: {
+                    from: 'vendors',
+                    localField: 'vendorId',
+                    foreignField: '_id',
+                    as: 'vendorDetails',
                 },
-                {
-                    $skip: (+page - 1) * +limit,
+            },
+            {
+                $unwind: '$vendorDetails',
+            },
+            {
+                $project: {
+                    _id: 1,
+                    date: 1,
+                    amount: 1,
+                    type: 1,
+                    notes: 1,
+                    vendor: '$vendorDetails.name',
+                    sourceType: { $literal: 'expense' },
                 },
-                {
-                    $limit: +limit,
+            },
+        ];
+        const shiftPipeline = [
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
+                    shiftComplete: true,
                 },
-                {
-                    $lookup: {
-                        from: 'vendors',
-                        localField: 'vendorId',
-                        foreignField: '_id',
-                        as: 'vendorDetails',
-                    },
+            },
+            {
+                $lookup: {
+                    from: 'clubs',
+                    localField: 'clubId',
+                    foreignField: '_id',
+                    as: 'clubDetails',
                 },
-                {
-                    $unwind: '$vendorDetails',
+            },
+            {
+                $unwind: '$clubDetails',
+            },
+            {
+                $addFields: {
+                    date: '$start',
                 },
-                {
-                    $addFields: {
-                        vendor: '$vendorDetails.name',
-                    },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    date: 1,
+                    start: '$start',
+                    clubId: 1,
+                    club: '$clubDetails.name',
+                    amount: '$expenses.totalShiftExpenses',
+                    type: '$expenses.type',
+                    notes: 1,
+                    expenses: 1,
+                    income: 1,
+                    milage: 1,
+                    sourceType: { $literal: 'shift' },
                 },
-                {
-                    $project: {
-                        _id: 1,
-                        vendorId: 1,
-                        vendor: 1,
-                        date: 1,
-                        amount: 1,
-                        type: 1,
-                        notes: 1,
-                    },
+            },
+        ];
+        const combinedPipeline = [
+            ...expensePipeline,
+            {
+                $unionWith: {
+                    coll: 'shifts',
+                    pipeline: shiftPipeline,
                 },
-            ]);
-            res.status(200).json({ expenses, count, pages: Math.ceil(count / +limit) });
-        }
-        else {
-            res.status(200).json({ expenses: [], count, pages: 0 });
-        }
+            },
+            {
+                $sort: {
+                    date: -1,
+                },
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: 'total' }],
+                    data: [{ $skip: (+page - 1) * +limit }, { $limit: +limit }],
+                },
+            },
+        ];
+        const result = await Expense_1.default.aggregate(combinedPipeline);
+        const count = ((_b = (_a = result[0]) === null || _a === void 0 ? void 0 : _a.metadata[0]) === null || _b === void 0 ? void 0 : _b.total) || 0;
+        const expenses = ((_c = result[0]) === null || _c === void 0 ? void 0 : _c.data) || [];
+        res.status(200).json({
+            expenses,
+            pages: Math.ceil(count / +limit),
+            count,
+        });
     }
     catch (error) {
         console.error('Expense Controller Error - PaginatedExpenses: ', error);
