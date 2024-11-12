@@ -16,6 +16,10 @@ const shiftSchema = new Schema<IShift>(
       type: Date,
       required: [true, 'End date and time required'],
     },
+    timezone: {
+      type: String,
+      required: [true, 'Timezone required'],
+    },
     shiftComplete: {
       type: Boolean,
       default: false,
