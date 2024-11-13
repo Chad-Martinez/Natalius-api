@@ -9,7 +9,7 @@ const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorRespons
 const Shift_1 = __importDefault(require("../models/Shift"));
 const Club_1 = __importDefault(require("../models/Club"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
-const dayjs_1 = __importDefault(require("dayjs"));
+const date_time_helpers_1 = require("../helpers/date-time-helpers");
 const getActiveShiftsByClub = async (req, res, next) => {
     try {
         const { clubId } = req.params;
@@ -26,13 +26,11 @@ const getActiveShiftsByClub = async (req, res, next) => {
 exports.getActiveShiftsByClub = getActiveShiftsByClub;
 const getUpcomingShiftWidgetData = async (userId) => {
     try {
-        const today = new Date(dayjs_1.default.utc().format());
-        today.setHours(0, 0, 0, 0);
         const shifts = await Shift_1.default.aggregate([
             {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
-                    start: { $gte: today },
+                    start: { $gte: (0, date_time_helpers_1.getStartOfDay)() },
                     shiftComplete: false,
                 },
             },
