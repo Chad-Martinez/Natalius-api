@@ -7,8 +7,8 @@ import { IShift } from '../interfaces/Shift.interface';
 import Club from '../models/Club';
 import { IClub } from '../interfaces/Club.interface';
 import Sprint from '../models/Sprint';
-import { ISprint } from 'src/interfaces/Sprint.interface';
-import dayjs from 'dayjs';
+import { ISprint } from '../interfaces/Sprint.interface';
+import { getStartOfDay } from '../helpers/date-time-helpers';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -27,14 +27,11 @@ export const getActiveShiftsByClub = async (req: Request, res: Response, next: N
 
 export const getUpcomingShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
   try {
-    const today = new Date(dayjs.utc().format());
-    today.setHours(0, 0, 0, 0);
-
     const shifts: HydratedDocument<IShift>[] = await Shift.aggregate([
       {
         $match: {
           userId: new Types.ObjectId(userId),
-          start: { $gte: today },
+          start: { $gte: getStartOfDay() },
           shiftComplete: false,
         },
       },

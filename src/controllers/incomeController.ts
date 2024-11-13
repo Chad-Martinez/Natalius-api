@@ -20,7 +20,7 @@ import {
   getStartOfYear,
   MONTHS_OF_YEAR,
 } from '../helpers/date-time-helpers';
-import { IShift } from 'src/interfaces/Shift.interface';
+import { IShift } from '../interfaces/Shift.interface';
 dayjs.extend(isBetween);
 
 export const getIncomeDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
