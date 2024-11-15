@@ -19,11 +19,21 @@ const clubSchema = new Schema<IClub>(
         type: String,
         validate: {
           validator: (v: string) => {
-            return /\d{3}-\d{3}-\d{4}/.test(v);
+            if (/\d{3}-\d{3}-\d{4}/.test(v) || v === null) return true;
+            else return false;
           },
           message: 'Supplied phone number is not a valid phone number',
         },
       },
+    },
+    defaults: {
+      useDefaults: { type: Boolean, default: false },
+      floorFee: Number,
+      pricePerDance: Number,
+      tips: Number,
+      other: Number,
+      distance: Number,
+      timezone: String,
     },
     shifts: [{ type: Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     distance: Number,
