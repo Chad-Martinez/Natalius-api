@@ -14,6 +14,7 @@ import {
   getEndOfQuarter,
   getEndOfWeek,
   getEndOfYear,
+  getStartOfDay,
   getStartOfMonth,
   getStartOfQuarter,
   getStartOfWeek,
@@ -537,6 +538,7 @@ export const perdictNextShiftIncome = async (
   const nextShift: HydratedDocument<IShift> | null = await Shift.findOne({
     userId: new Types.ObjectId(userId),
     shiftComplete: false,
+    start: { $gte: getStartOfDay() },
   }).sort({ start: 1 });
 
   if (!nextShift) {
