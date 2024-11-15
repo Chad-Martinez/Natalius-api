@@ -513,6 +513,7 @@ const perdictNextShiftIncome = async (userId) => {
     const nextShift = await Shift_1.default.findOne({
         userId: new mongoose_1.Types.ObjectId(userId),
         shiftComplete: false,
+        start: { $gte: (0, date_time_helpers_1.getStartOfDay)() },
     }).sort({ start: 1 });
     if (!nextShift) {
         return null;
