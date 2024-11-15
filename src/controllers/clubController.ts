@@ -42,6 +42,8 @@ export const getClubsByUser = async (req: ICustomRequest, res: Response, next: N
                 start: '$$shift.start',
                 end: '$$shift.end',
                 notes: '$$shift.notes',
+                timezone: '$$shift.timezone',
+                milage: '$$shift.milage',
                 shiftComplete: '$$shift.shiftComplete',
                 created_at: '$$shift.created_at',
                 updated_at: '$$shift.updated_at',
@@ -120,6 +122,7 @@ export const getClubsByUser = async (req: ICustomRequest, res: Response, next: N
           address: 1,
           fullAddress: 1,
           contact: 1,
+          defaults: 1,
           shifts: 1,
           distance: 1,
           isArchived: 1,
@@ -143,7 +146,7 @@ export const getClubNames = async (req: ICustomRequest, res: Response, next: Nex
 
     if (!isValidObjectId(userId)) throw new HttpErrorResponse(400, 'Provided id is not valid');
 
-    const clubs: HydratedDocument<IClub>[] = await Club.find({ userId }, { name: 1 });
+    const clubs: HydratedDocument<IClub>[] = await Club.find({ userId, isArchived: false }, { name: 1, defaults: 1 });
 
     res.status(200).json(clubs);
   } catch (error) {
@@ -171,15 +174,10 @@ export const getClubById = async (req: Request, res: Response, next: NextFunctio
 
 export const addClub = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, address, contact, distance } = req.body;
-
     const { userId } = req;
 
     const club = new Club({
-      name,
-      address,
-      contact,
-      distance,
+      ...req.body,
       userId,
     });
 
