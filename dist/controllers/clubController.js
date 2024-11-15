@@ -43,6 +43,8 @@ const getClubsByUser = async (req, res, next) => {
                                 start: '$$shift.start',
                                 end: '$$shift.end',
                                 notes: '$$shift.notes',
+                                timezone: '$$shift.timezone',
+                                milage: '$$shift.milage',
                                 shiftComplete: '$$shift.shiftComplete',
                                 created_at: '$$shift.created_at',
                                 updated_at: '$$shift.updated_at',
@@ -121,6 +123,7 @@ const getClubsByUser = async (req, res, next) => {
                     address: 1,
                     fullAddress: 1,
                     contact: 1,
+                    defaults: 1,
                     shifts: 1,
                     distance: 1,
                     isArchived: 1,
@@ -143,7 +146,7 @@ const getClubNames = async (req, res, next) => {
         const { userId } = req;
         if (!(0, mongoose_1.isValidObjectId)(userId))
             throw new HttpErrorResponse_1.default(400, 'Provided id is not valid');
-        const clubs = await Club_1.default.find({ userId }, { name: 1 });
+        const clubs = await Club_1.default.find({ userId, isArchived: false }, { name: 1, defaults: 1 });
         res.status(200).json(clubs);
     }
     catch (error) {
@@ -170,15 +173,8 @@ const getClubById = async (req, res, next) => {
 exports.getClubById = getClubById;
 const addClub = async (req, res, next) => {
     try {
-        const { name, address, contact, distance } = req.body;
         const { userId } = req;
-        const club = new Club_1.default({
-            name,
-            address,
-            contact,
-            distance,
-            userId,
-        });
+        const club = new Club_1.default(Object.assign(Object.assign({}, req.body), { userId }));
         await club.save();
         res.status(201).json({ _id: club._id });
     }

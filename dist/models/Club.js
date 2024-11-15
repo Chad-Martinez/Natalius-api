@@ -18,11 +18,23 @@ const clubSchema = new mongoose_1.Schema({
             type: String,
             validate: {
                 validator: (v) => {
-                    return /\d{3}-\d{3}-\d{4}/.test(v);
+                    if (/\d{3}-\d{3}-\d{4}/.test(v) || v === null)
+                        return true;
+                    else
+                        return false;
                 },
                 message: 'Supplied phone number is not a valid phone number',
             },
         },
+    },
+    defaults: {
+        useDefaults: { type: Boolean, default: false },
+        floorFee: Number,
+        pricePerDance: Number,
+        tips: Number,
+        other: Number,
+        distance: Number,
+        timezone: String,
     },
     shifts: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Shift', default: [] }],
     distance: Number,
