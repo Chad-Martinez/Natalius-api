@@ -67,8 +67,8 @@ export const addSprint = async (req: ICustomRequest, res: Response, next: NextFu
 
     const { userId } = req;
 
-    const startDate = dayjs.utc(start).hour(0).minute(0).second(0).millisecond(0);
-    const endDate = startDate.add(2, 'week');
+    const startDate = dayjs(start).utc();
+    const endDate = dayjs(startDate).add(2, 'week').utc();
 
     const shifts: HydratedDocument<IShift>[] = await Shift.find({ userId: userId, start: { $gte: startDate, $lte: endDate } });
     const mappedIds: Types.ObjectId[] = shifts.map((shift: IShift) => shift._id);
@@ -105,8 +105,8 @@ export const updateSprint = async (req: Request, res: Response, next: NextFuncti
 
     if (!sprint) throw new HttpErrorResponse(404, 'Requested resource not found');
 
-    const startDate = dayjs.utc(start).hour(0).minute(0).second(0).millisecond(0);
-    const endDate = startDate.add(2, 'week');
+    const startDate = dayjs.utc(start);
+    const endDate = dayjs(startDate).add(2, 'week');
 
     sprint.start = startDate.toDate();
     sprint.end = endDate.toDate();
