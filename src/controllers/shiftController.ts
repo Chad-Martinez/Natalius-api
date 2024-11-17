@@ -9,6 +9,7 @@ import { IClub } from '../interfaces/Club.interface';
 import Sprint from '../models/Sprint';
 import { ISprint } from '../interfaces/Sprint.interface';
 import { getStartOfDay } from '../helpers/date-time-helpers';
+import dayjs from 'dayjs';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -120,8 +121,11 @@ export const addShift = async (req: ICustomRequest, res: Response, next: NextFun
     const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ userId: userId, isCompleted: false });
 
     if (sprint) {
-      sprint.shiftIds.push(savedShift._id);
-      await sprint.save();
+      sprint as ISprint;
+      if (dayjs(shift.start).isBetween(sprint.start, sprint.end)) {
+        sprint.shiftIds.push(savedShift._id);
+        await sprint.save();
+      }
     }
 
     res.status(201).json({ shiftId: shift._id });
@@ -171,6 +175,14 @@ export const updateShift = async (req: Request, res: Response, next: NextFunctio
       newClub.shifts?.push(shift._id);
       await newClub.save();
     }
+
+    const sprint: HydratedDocument<ISprint> | null = await Sprint.findOne({ isCompleted: false });
+
+    if (sprint && dayjs(shift.start).isBetween(sprint.start, sprint.end) && !sprint.shiftIds.includes(shift._id)) sprint.shiftIds.push(shift._id);
+    else if (sprint && !dayjs(shift.start).isBetween(sprint.start, sprint.end))
+      sprint.shiftIds = sprint.shiftIds.filter((id) => id.toString() !== shift._id.toString());
+
+    await sprint?.save();
 
     res.status(200).json({ message: 'Shift updated' });
   } catch (error) {

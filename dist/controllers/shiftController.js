@@ -10,6 +10,7 @@ const Shift_1 = __importDefault(require("../models/Shift"));
 const Club_1 = __importDefault(require("../models/Club"));
 const Sprint_1 = __importDefault(require("../models/Sprint"));
 const date_time_helpers_1 = require("../helpers/date-time-helpers");
+const dayjs_1 = __importDefault(require("dayjs"));
 const getActiveShiftsByClub = async (req, res, next) => {
     try {
         const { clubId } = req.params;
@@ -112,8 +113,11 @@ const addShift = async (req, res, next) => {
         club.save();
         const sprint = await Sprint_1.default.findOne({ userId: userId, isCompleted: false });
         if (sprint) {
-            sprint.shiftIds.push(savedShift._id);
-            await sprint.save();
+            sprint;
+            if ((0, dayjs_1.default)(shift.start).isBetween(sprint.start, sprint.end)) {
+                sprint.shiftIds.push(savedShift._id);
+                await sprint.save();
+            }
         }
         res.status(201).json({ shiftId: shift._id });
     }
@@ -157,6 +161,12 @@ const updateShift = async (req, res, next) => {
             (_a = newClub.shifts) === null || _a === void 0 ? void 0 : _a.push(shift._id);
             await newClub.save();
         }
+        const sprint = await Sprint_1.default.findOne({ isCompleted: false });
+        if (sprint && (0, dayjs_1.default)(shift.start).isBetween(sprint.start, sprint.end) && !sprint.shiftIds.includes(shift._id))
+            sprint.shiftIds.push(shift._id);
+        else if (sprint && !(0, dayjs_1.default)(shift.start).isBetween(sprint.start, sprint.end))
+            sprint.shiftIds = sprint.shiftIds.filter((id) => id.toString() !== shift._id.toString());
+        await (sprint === null || sprint === void 0 ? void 0 : sprint.save());
         res.status(200).json({ message: 'Shift updated' });
     }
     catch (error) {
