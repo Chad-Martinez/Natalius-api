@@ -84,7 +84,7 @@ export const getUpcomingShiftWidgetData = async (userId: string): Promise<Hydrat
         $match: {
           userId: new Types.ObjectId(userId),
           start: { $gte: getStartOfDay() },
-          end: { $lte: new Date(dayjs().add(1, 'hour').format()) },
+          end: { $gte: new Date(dayjs().add(1, 'hour').format()) },
           shiftComplete: false,
         },
       },
