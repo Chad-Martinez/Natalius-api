@@ -83,7 +83,7 @@ const getUpcomingShiftWidgetData = async (userId) => {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
                     start: { $gte: (0, date_time_helpers_1.getStartOfDay)() },
-                    end: { $lte: new Date((0, dayjs_1.default)().add(1, 'hour').format()) },
+                    end: { $gte: new Date((0, dayjs_1.default)().add(1, 'hour').format()) },
                     shiftComplete: false,
                 },
             },
