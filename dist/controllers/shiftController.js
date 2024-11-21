@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getUpcomingShiftWidgetData = exports.getActiveShiftsByClub = void 0;
+exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getUpcomingShiftWidgetData = exports.getShiftsToComplete = exports.getActiveShiftsByClub = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Shift_1 = __importDefault(require("../models/Shift"));
@@ -25,6 +25,57 @@ const getActiveShiftsByClub = async (req, res, next) => {
     }
 };
 exports.getActiveShiftsByClub = getActiveShiftsByClub;
+const getShiftsToComplete = async (req, res, next) => {
+    try {
+        const { userId } = req;
+        const shifts = await Shift_1.default.aggregate([
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
+                    end: { $lte: new Date((0, dayjs_1.default)().add(1, 'hour').format()) },
+                    shiftComplete: false,
+                },
+            },
+            {
+                $sort: {
+                    start: 1,
+                },
+            },
+            {
+                $limit: 3,
+            },
+            {
+                $lookup: {
+                    from: 'clubs',
+                    localField: 'clubId',
+                    foreignField: '_id',
+                    as: 'clubDetails',
+                },
+            },
+            {
+                $unwind: '$clubDetails',
+            },
+            {
+                $project: {
+                    _id: 1,
+                    clubId: 1,
+                    club: '$clubDetails.name',
+                    start: 1,
+                    end: 1,
+                    timezone: 1,
+                    notes: 1,
+                    shiftComplete: 1,
+                },
+            },
+        ]).exec();
+        res.status(200).json(shifts);
+    }
+    catch (error) {
+        console.error('Get Next Three Shifts Error: ', error);
+        next(error);
+    }
+};
+exports.getShiftsToComplete = getShiftsToComplete;
 const getUpcomingShiftWidgetData = async (userId) => {
     try {
         const shifts = await Shift_1.default.aggregate([
@@ -32,6 +83,7 @@ const getUpcomingShiftWidgetData = async (userId) => {
                 $match: {
                     userId: new mongoose_1.Types.ObjectId(userId),
                     start: { $gte: (0, date_time_helpers_1.getStartOfDay)() },
+                    end: { $lte: new Date((0, dayjs_1.default)().add(1, 'hour').format()) },
                     shiftComplete: false,
                 },
             },
