@@ -26,6 +26,57 @@ export const getActiveShiftsByClub = async (req: Request, res: Response, next: N
   }
 };
 
+export const getShiftsToComplete = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<HydratedDocument<IShift>[] | void> => {
+  try {
+    const { userId } = req;
+    const shifts: HydratedDocument<IShift>[] = await Shift.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          end: { $lte: new Date(dayjs().add(1, 'hour').format()) },
+          shiftComplete: false,
+        },
+      },
+      {
+        $sort: {
+          start: 1,
+        },
+      },
+      {
+        $limit: 3,
+      },
+      {
+        $lookup: {
+          from: 'clubs',
+          localField: 'clubId',
+          foreignField: '_id',
+          as: 'clubDetails',
+        },
+      },
+      {
+        $unwind: '$clubDetails',
+      },
+      {
+        $project: {
+          _id: 1,
+          clubId: 1,
+          club: '$clubDetails.name',
+          start: 1,
+          end: 1,
+          timezone: 1,
+          notes: 1,
+          shiftComplete: 1,
+        },
+      },
+    ]).exec();
+
+    res.status(200).json(shifts);
+  } catch (error) {
+    console.error('Get Next Three Shifts Error: ', error);
+    next(error);
+  }
+};
+
 export const getUpcomingShiftWidgetData = async (userId: string): Promise<HydratedDocument<IShift>[] | void> => {
   try {
     const shifts: HydratedDocument<IShift>[] = await Shift.aggregate([
@@ -33,6 +84,7 @@ export const getUpcomingShiftWidgetData = async (userId: string): Promise<Hydrat
         $match: {
           userId: new Types.ObjectId(userId),
           start: { $gte: getStartOfDay() },
+          end: { $lte: new Date(dayjs().add(1, 'hour').format()) },
           shiftComplete: false,
         },
       },
