@@ -539,6 +539,7 @@ export const perdictNextShiftIncome = async (
     userId: new Types.ObjectId(userId),
     shiftComplete: false,
     start: { $gte: getStartOfDay() },
+    end: { $gte: new Date(dayjs().add(1, 'hour').format()) },
   }).sort({ start: 1 });
 
   if (!nextShift) {
