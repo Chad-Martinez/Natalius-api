@@ -20,7 +20,7 @@ import { corsOptions } from './config/corsOptions';
 dbConnect();
 
 const app: Express = express();
-const port = process.env.PORT || 5050;
+const port = parseInt(process.env.PORT || '5050', 10);
 
 app.use(json());
 app.use(cors(corsOptions));
@@ -55,5 +55,5 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction): void =>
 
 connection.once('open', () => {
   console.log('Connected to MongoDB');
-  app.listen(port, () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
+  app.listen(port, '0.0.0.0', () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
 });
