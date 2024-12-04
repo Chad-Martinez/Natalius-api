@@ -8,7 +8,7 @@ import Club from '../models/Club';
 import { IClub } from '../interfaces/Club.interface';
 import Sprint from '../models/Sprint';
 import { ISprint } from '../interfaces/Sprint.interface';
-import { getStartOfDay } from '../helpers/date-time-helpers';
+import { getStartOfDay, getStartOfYear } from '../helpers/date-time-helpers';
 import dayjs from 'dayjs';
 
 export const getActiveShiftsByClub = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -124,6 +124,32 @@ export const getUpcomingShiftWidgetData = async (userId: string): Promise<Hydrat
     return shifts;
   } catch (error) {
     console.error('Get Next Three Shifts Error: ', error);
+  }
+};
+
+export const getYtdMilageWidgetData = async (userId: string): Promise<{} | void> => {
+  try {
+    const milage: HydratedDocument<IShift>[] = await Shift.aggregate([
+      {
+        $match: {
+          userId: new Types.ObjectId(userId),
+          shiftComplete: true,
+          start: {
+            $gte: new Date(getStartOfYear()),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalMilage: { $sum: '$milage' },
+        },
+      },
+    ]).exec();
+
+    return milage[0];
+  } catch (error) {
+    console.error('Get YTD Milage Error: ', error);
   }
 };
 

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getUpcomingShiftWidgetData = exports.getShiftsToComplete = exports.getActiveShiftsByClub = void 0;
+exports.deleteShift = exports.updateShift = exports.addShift = exports.getShiftById = exports.getYtdMilageWidgetData = exports.getUpcomingShiftWidgetData = exports.getShiftsToComplete = exports.getActiveShiftsByClub = void 0;
 const mongoose_1 = require("mongoose");
 const HttpErrorResponse_1 = __importDefault(require("../classes/HttpErrorResponse"));
 const Shift_1 = __importDefault(require("../models/Shift"));
@@ -126,6 +126,32 @@ const getUpcomingShiftWidgetData = async (userId) => {
     }
 };
 exports.getUpcomingShiftWidgetData = getUpcomingShiftWidgetData;
+const getYtdMilageWidgetData = async (userId) => {
+    try {
+        const milage = await Shift_1.default.aggregate([
+            {
+                $match: {
+                    userId: new mongoose_1.Types.ObjectId(userId),
+                    shiftComplete: true,
+                    start: {
+                        $gte: new Date((0, date_time_helpers_1.getStartOfYear)()),
+                    },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalMilage: { $sum: '$milage' },
+                },
+            },
+        ]).exec();
+        return milage[0];
+    }
+    catch (error) {
+        console.error('Get YTD Milage Error: ', error);
+    }
+};
+exports.getYtdMilageWidgetData = getYtdMilageWidgetData;
 const getShiftById = async (req, res, next) => {
     try {
         const { shiftId } = req.params;
