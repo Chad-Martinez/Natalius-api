@@ -9,7 +9,11 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
     const cookies = req.cookies;
     if (!cookies?.jwt) throw new HttpErrorResponse(418, 'Forbidden - Missing token');
     const refreshToken: string = cookies.jwt;
-    res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
 
     const verifyToken = (token: string): Promise<IRefreshToken> => {
       return new Promise((resolve, reject) => {
@@ -43,8 +47,8 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
 
       res.cookie('jwt', newRefreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 15 * 24 * 60 * 60 * 1000,
       });
 

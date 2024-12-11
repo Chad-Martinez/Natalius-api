@@ -125,13 +125,22 @@ export const login: RequestHandler = async (req: Request, res: Response, next: N
         newRefreshTokenArray = [];
       }
 
-      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+      res.clearCookie('jwt', {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
     }
 
     user.refreshTokens = [...newRefreshTokenArray, newRefreshToken];
     await user.save();
 
-    res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'none', secure: true, maxAge: 15 * 24 * 60 * 60 * 1000 });
+    res.cookie('jwt', newRefreshToken, {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({ id: user._id, accessToken });
   } catch (error) {
@@ -156,7 +165,11 @@ export const logout: RequestHandler = async (req: Request, res: Response, next: 
 
     const user = await User.findOne({ refreshTokens });
     if (!user) {
-      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
+      res.clearCookie('jwt', {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
       return res.sendStatus(204);
     }
 
