@@ -1,3 +1,4 @@
+import { UploadApiResponse } from 'cloudinary';
 import { Types } from 'mongoose';
 import { EnumType } from 'typescript';
 
@@ -26,8 +27,9 @@ export interface IShiftBase {
   notes: String;
   shiftComplete: boolean;
   clubId: Types.ObjectId;
-  expenses: IShiftExpenses;
+  expenses?: IShiftExpenses;
   income: IShiftIncome;
+  image: UploadApiResponse | undefined;
   milage: Number;
   userId: Types.ObjectId;
 }

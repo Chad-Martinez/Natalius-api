@@ -31,37 +31,29 @@ const shiftSchema = new Schema<IShift>(
     expenses: {
       floorFee: {
         type: Number,
-        default: 0,
       },
       dances: {
         numOfDances: {
           type: Number,
-          default: 0,
         },
         pricePerDance: {
           type: Number,
-          default: 0,
         },
         danceFeeTotal: {
           type: Number,
-          default: 0,
         },
       },
       tips: {
         type: Number,
-        default: 0,
       },
       other: {
         type: Number,
-        default: 0,
       },
       totalShiftExpenses: {
         type: Number,
-        default: 0,
       },
       type: {
         type: String,
-        default: 'SERVICE',
       },
     },
     income: {
@@ -74,6 +66,7 @@ const shiftSchema = new Schema<IShift>(
         default: 'CASH',
       },
     },
+    image: Object,
     milage: {
       type: Number,
       default: 0,
