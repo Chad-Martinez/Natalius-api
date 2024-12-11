@@ -1,1 +1,0 @@
-{"version":3,"file":"HttpErrorResponse.js","sourceRoot":"","sources":["../../src/classes/HttpErrorResponse.ts"],"names":[],"mappings":";;AAAA,MAAM,iBAAkB,SAAQ,KAAK;IAEnC,YAAY,MAAc,EAAE,OAAe;QACzC,KAAK,CAAC,OAAO,CAAC,CAAC;QACf,IAAI,CAAC,MAAM,GAAG,MAAM,CAAC;IACvB,CAAC;CACF;AAED,kBAAe,iBAAiB,CAAC"}
