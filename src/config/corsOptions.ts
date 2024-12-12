@@ -20,6 +20,7 @@ export const corsOptions: CorsOptions = {
     'X-Requested-With',
     'Access-Control-Request-Method',
     'Access-Control-Request-Headers',
+    'Access-Control-Allow-Origin',
   ],
   optionsSuccessStatus: 200,
   exposedHeaders: ['Set-Cookie'],
