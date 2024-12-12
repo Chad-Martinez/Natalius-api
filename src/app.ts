@@ -55,6 +55,8 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction): void =>
   res.status(500).json({ message: 'Internal Server Error', error });
 });
 
+console.log('cors options ', corsOptions);
+
 connection.once('open', () => {
   console.log('Connected to MongoDB');
   app.listen(port, '0.0.0.0', () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
