@@ -46,6 +46,8 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/images', imageRoutes);
 
+console.log('cors options ', corsOptions);
+
 // eslint-disable-next-line no-unused-vars
 app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
   console.error('Express Error Middleware: ', error);
