@@ -26,6 +26,33 @@ const port = parseInt(process.env.PORT || '5050', 10);
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
+const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
+  // Allow credentials
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  // Allow Methods
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+  // Allow Headers
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Authorization, Content-Type, Origin, Accept, X-Requested-With, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin',
+  );
+
+  // Expose Headers
+  res.header('Access-Control-Expose-Headers', 'Set-Cookie');
+
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  return next(); // Add return here
+};
+
+// Use the middleware
+app.use(setCorsHeaders);
+
 const logRequests = (req: Request, res: Response, next: NextFunction) => {
   const { headers, method, url } = req;
   const startTime = Date.now();
