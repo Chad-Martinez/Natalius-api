@@ -23,14 +23,31 @@ dbConnect();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
+const logRequests = (req: Request, res: Response, next: NextFunction) => {
+  const { headers, method, url } = req;
+  const startTime = Date.now();
+
+  // Log request details when it starts
+  console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
+
+  // Log response details when it finishes
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] ${method} ${url} ${res.statusCode} - ${duration}ms`);
+  });
+
+  next();
+};
+
+console.log('env ', process.env.NODE_ENV);
+
+// Use the middleware in your app
+app.use(logRequests);
+
 app.use(json());
 app.use(cors(corsOptions));
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
-
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).send('Natalius API is active').json({ message: 'Natalius API is active' });
-});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tokens', tokenRoutes);
