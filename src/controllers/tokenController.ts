@@ -7,7 +7,12 @@ import User from '../models/User';
 export const handleRefreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const cookies = req.cookies;
-    if (!cookies?.jwt) throw new HttpErrorResponse(418, 'Forbidden - Missing token');
+
+    if (!cookies?.jwt) {
+      res.status(418).json({ message: 'Forbidden - Missing token' });
+      return;
+    }
+
     const refreshToken: string = cookies.jwt;
     res.clearCookie('jwt', {
       httpOnly: true,
@@ -54,6 +59,7 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
 
       res.json({ accessToken });
     } catch (error) {
+      console.error('TokenController Error - InnerTryCatch: ', error);
       if (error instanceof jwt.JsonWebTokenError) {
         throw new HttpErrorResponse(418, 'Forbidden - Invalid token');
       }
