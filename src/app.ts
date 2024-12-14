@@ -47,7 +47,7 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
     return res.status(200).end();
   }
 
-  return next(); // Add return here
+  return next();
 };
 
 // Use the middleware
@@ -99,15 +99,16 @@ app.use('/api/sprints', sprintRoutes);
 app.use('/api/images', imageRoutes);
 
 // eslint-disable-next-line no-unused-vars
-app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
-  console.error('Express Error Middleware: ', error);
+app.use((error: any, req: Request, res: Response, next: NextFunction): void => {
+  console.error('Express Error Middleware:', error);
   if (error instanceof HttpErrorResponse) {
     res.status(error.status).json({ message: error.message });
+  } else {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message || error });
   }
-  res.status(500).json({ message: 'Internal Server Error', error });
 });
 
 connection.once('open', () => {
   console.log('Connected to MongoDB');
-  app.listen(port, '0.0.0.0', () => console.log(`Server running oooh so smoothly at http://localhost:${port}`));
+  app.listen(port, '0.0.0.0', () => console.log(`Server running oooh so smoothly on Port:${port}`));
 });
