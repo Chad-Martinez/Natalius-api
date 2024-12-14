@@ -14,11 +14,6 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
     }
 
     const refreshToken: string = cookies.jwt;
-    res.clearCookie('jwt', {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
 
     const verifyToken = (token: string): Promise<IRefreshToken> => {
       return new Promise((resolve, reject) => {
@@ -49,6 +44,12 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
       const newRefreshToken: string = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15d' });
 
       await User.findOneAndUpdate({ _id: user._id }, { $push: { refreshTokens: newRefreshToken } });
+
+      res.clearCookie('jwt', {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
 
       res.cookie('jwt', newRefreshToken, {
         httpOnly: true,
