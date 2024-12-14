@@ -23,12 +23,17 @@ dbConnect();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
+app.use(cors(corsOptions));
+
 const logRequests = (req: Request, res: Response, next: NextFunction) => {
   const { headers, method, url } = req;
   const startTime = Date.now();
 
   // Log request details when it starts
   console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
+
+  console.log('CORS Headers Set:', corsOptions);
+  console.log('Response Headers Before Sending:', res.getHeaders());
 
   // Log response details when it finishes
   res.on('finish', () => {
@@ -39,13 +44,12 @@ const logRequests = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-console.log('env ', process.env.NODE_ENV);
-
 // Use the middleware in your app
 app.use(logRequests);
 
+console.log('env ', process.env.NODE_ENV);
+
 app.use(json());
-app.use(cors(corsOptions));
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -62,8 +66,6 @@ app.use('/api/vendors', vendorRouters);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/images', imageRoutes);
-
-console.log('cors options ', corsOptions);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: Error, req: Request, res: Response, next: NextFunction): void => {
