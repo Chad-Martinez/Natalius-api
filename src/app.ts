@@ -23,6 +23,7 @@ dbConnect();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
+app.use(cookieParser());
 app.use(cors(corsOptions));
 
 const logRequests = (req: Request, res: Response, next: NextFunction) => {
@@ -51,7 +52,6 @@ console.log('env ', process.env.NODE_ENV);
 
 app.use(json());
 app.use(urlencoded({ extended: true }));
-app.use(cookieParser());
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).send('Natalius API is active');
