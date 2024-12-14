@@ -34,7 +34,7 @@ const logRequests = (req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
 
   console.log('CORS Headers Set:', corsOptions);
-  console.log('Response Headers Before Sending:', res.getHeaders());
+  console.log('Response Headers Before Sending:', JSON.stringify(res.getHeaders()));
 
   // Log response details when it finishes
   res.on('finish', () => {
