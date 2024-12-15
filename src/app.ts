@@ -73,10 +73,10 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
 // Use the middleware
 app.use(setCorsHeaders);
 
-app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('[CORS ERROR]', err);
-  res.status(500).send('CORS Configuration Error');
-});
+// app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
+//   console.error('[CORS ERROR]', err);
+//   res.status(500).send('CORS Configuration Error');
+// });
 
 const logRequests = (req: Request, res: Response, next: NextFunction) => {
   const { headers, method, url } = req;
