@@ -43,7 +43,7 @@ console.log('env ', process.env.NODE_ENV);
 //   res.status(204).end(); // No Content for preflight
 // });
 
-app.use(cookieParser());
+// app.use(cookieParser());
 
 const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
   const origin = req.headers.origin;
@@ -115,10 +115,11 @@ app.use(setCorsHeaders);
 // // Use the middleware in your app
 // app.use(logRequests);
 
-app.use(json());
-app.use(urlencoded({ extended: true }));
+// app.use(json());
+// app.use(urlencoded({ extended: true }));
 
 app.post('/api/auth/register', (req, res) => {
+  console.log('auth route ', JSON.stringify(res.getHeaders()));
   res.json({ message: 'Registration successful' });
 });
 
