@@ -16,7 +16,7 @@ import tokenRoutes from './routes/tokenRoutes';
 import sprintRoutes from './routes/sprintRoutes';
 import imageRoutes from './routes/imageRoutes';
 import cors from 'cors';
-import { corsOptions } from './config/corsOptions';
+// import { corsOptions } from './config/corsOptions';
 import { allowedOrigins } from './config/allowedOrigins';
 
 dbConnect();
@@ -43,7 +43,7 @@ console.log('env ', process.env.NODE_ENV);
 //   res.status(204).end(); // No Content for preflight
 // });
 
-// app.use(cookieParser());
+app.use(cookieParser());
 
 const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
   const origin = req.headers.origin;
@@ -108,8 +108,8 @@ app.use(setCorsHeaders);
 // // Use the middleware in your app
 // app.use(logRequests);
 
-// app.use(json());
-// app.use(urlencoded({ extended: true }));
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
 app.post('/api/auth/register', (req, res) => {
   console.log('auth route ', JSON.stringify(res.getHeaders()));
@@ -120,19 +120,19 @@ app.post('/api/auth/register', (req, res) => {
 //   res.status(200).send('Natalius API is active');
 // });
 
-// app.use('/api/auth', authRoutes);
-// app.use('/api/tokens', tokenRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/tokens', tokenRoutes);
 
-// app.use(verifyJWT);
-// app.use('/api/dashboard', dashboardRoutes);
-// app.use('/api/profiles', profileRoutes);
-// app.use('/api/clubs', clubRoutes);
-// app.use('/api/shifts', shiftRoutes);
-// app.use('/api/income', incomeRoutes);
-// app.use('/api/vendors', vendorRouters);
-// app.use('/api/expenses', expenseRoutes);
-// app.use('/api/sprints', sprintRoutes);
-// app.use('/api/images', imageRoutes);
+app.use(verifyJWT);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/clubs', clubRoutes);
+app.use('/api/shifts', shiftRoutes);
+app.use('/api/income', incomeRoutes);
+app.use('/api/vendors', vendorRouters);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/sprints', sprintRoutes);
+app.use('/api/images', imageRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: any, req: Request, res: Response, next: NextFunction): void => {
