@@ -24,6 +24,8 @@ dbConnect();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
+console.log('env ', process.env.NODE_ENV);
+
 app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('[CORS ERROR]', err);
   res.status(500).send('CORS Configuration Error');
@@ -37,6 +39,7 @@ app.options('*', (req, res) => {
   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Credentials', 'true');
+  console.log('response headers ', JSON.stringify(res.getHeaders()));
   res.status(204).end(); // No Content for preflight
 });
 
