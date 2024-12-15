@@ -29,7 +29,16 @@ app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextF
   res.status(500).send('CORS Configuration Error');
 });
 
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions));
+
+app.options('*', (req, res) => {
+  console.log('OPTIONS request received:', req.headers.origin);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(204).end(); // No Content for preflight
+});
 
 app.use(cookieParser());
 
