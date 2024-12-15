@@ -46,17 +46,25 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
   // Allow Headers
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Authorization, Content-Type, Origin, Accept, X-Requested-With, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin',
-  );
+  // res.header(
+  //   'Access-Control-Allow-Headers',
+  //   'Authorization, Content-Type, Origin, Accept, X-Requested-With, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin',
+  // );
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
 
   // Expose Headers
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
 
   // Handle OPTIONS preflight
+  // if (req.method === 'OPTIONS') {
+  //   return res.status(204).end();
+  // }
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    console.log('Handling OPTIONS request for:', req.headers.origin);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    return res.status(204).end(); // No Content for preflight
   }
 
   return next();
