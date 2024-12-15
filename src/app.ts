@@ -26,71 +26,71 @@ const port = parseInt(process.env.PORT || '5050', 10);
 
 console.log('env ', process.env.NODE_ENV);
 
-app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('[CORS ERROR]', err);
-  res.status(500).send('CORS Configuration Error');
-});
+// app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
+//   console.error('[CORS ERROR]', err);
+//   res.status(500).send('CORS Configuration Error');
+// });
 
 // app.options('*', cors(corsOptions));
 
-app.options('*', (req, res) => {
-  console.log('OPTIONS request received:', req.headers.origin);
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  console.log('response headers ', JSON.stringify(res.getHeaders()));
-  res.status(204).end(); // No Content for preflight
-});
+// app.options('*', (req, res) => {
+//   console.log('OPTIONS request received:', req.headers.origin);
+//   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+//   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+//   res.header('Access-Control-Allow-Credentials', 'true');
+//   console.log('response headers ', JSON.stringify(res.getHeaders()));
+//   res.status(204).end(); // No Content for preflight
+// });
 
 app.use(cookieParser());
 
-// const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
-//   const origin = req.headers.origin;
+const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
+  const origin = req.headers.origin;
 
-//   if (!origin) {
-//     return next();
-//   }
+  if (!origin) {
+    return next();
+  }
 
-//   if (!allowedOrigins.includes(origin)) {
-//     console.warn('Blocked origin:', origin);
-//     return res.status(403).json({ message: 'CORS policy does not allow access from this origin' });
-//   }
+  if (!allowedOrigins.includes(origin)) {
+    console.warn('Blocked origin:', origin);
+    return res.status(403).json({ message: 'CORS policy does not allow access from this origin' });
+  }
 
-//   res.setHeader('Access-Control-Allow-Origin', origin);
-//   // Allow credentials
-//   res.header('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  // Allow credentials
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-//   // Allow Methods
-//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  // Allow Methods
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
-//   // Allow Headers
-//   // res.header(
-//   //   'Access-Control-Allow-Headers',
-//   //   'Authorization, Content-Type, Origin, Accept, X-Requested-With, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin',
-//   // );
-//   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
+  // Allow Headers
+  // res.header(
+  //   'Access-Control-Allow-Headers',
+  //   'Authorization, Content-Type, Origin, Accept, X-Requested-With, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin',
+  // );
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
 
-//   // Expose Headers
-//   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
+  // Expose Headers
+  res.header('Access-Control-Expose-Headers', 'Set-Cookie');
 
-//   // Handle OPTIONS preflight
-//   // if (req.method === 'OPTIONS') {
-//   //   return res.status(204).end();
-//   // }
-//   if (req.method === 'OPTIONS') {
-//     console.log('Handling OPTIONS request for:', req.headers.origin);
-//     res.header('Access-Control-Allow-Origin', origin);
-//     res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
-//     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-//     return res.status(204).end(); // No Content for preflight
-//   }
+  // Handle OPTIONS preflight
+  // if (req.method === 'OPTIONS') {
+  //   return res.status(204).end();
+  // }
+  if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request for:', req.headers.origin);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    return res.status(204).end(); // No Content for preflight
+  }
 
-//   return next();
-// };
+  return next();
+};
 
 // // Use the middleware
-// app.use(setCorsHeaders);
+app.use(setCorsHeaders);
 
 // const logRequests = (req: Request, res: Response, next: NextFunction) => {
 //   const { headers, method, url } = req;
