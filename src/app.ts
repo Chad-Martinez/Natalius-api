@@ -60,12 +60,13 @@ const logRequests = (req: Request, res: Response, next: NextFunction) => {
   // Log request details when it starts
   console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
 
-  console.log('CORS Headers Set:', corsOptions);
+  console.log('CORS Options Credentials: ', corsOptions.credentials);
   console.log('Response Headers Before Sending:', JSON.stringify(res.getHeaders()));
 
   // Log response details when it finishes
   res.on('finish', () => {
     const duration = Date.now() - startTime;
+    console.log('Response Headers After Sending:', JSON.stringify(res.getHeaders()));
     console.log(`[${new Date().toISOString()}] ${method} ${url} ${res.statusCode} - ${duration}ms`);
   });
 

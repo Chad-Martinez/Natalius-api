@@ -36,6 +36,11 @@ export const handleRefreshToken = async (req: Request, res: Response, next: Next
       if (!user) {
         // Token reuse detected
         await User.findOneAndUpdate({ email: decodedToken.email }, { $set: { refreshTokens: [] } });
+        res.clearCookie('jwt', {
+          httpOnly: true,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        });
         throw new HttpErrorResponse(418, 'Forbidden - Reuse');
       }
 
