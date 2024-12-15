@@ -5,6 +5,7 @@ import HttpErrorResponse from '../classes/HttpErrorResponse';
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
+      console.log('Origin:', origin);
       callback(null, origin);
     } else {
       callback(new HttpErrorResponse(400, 'Not allowed by CORS'));
