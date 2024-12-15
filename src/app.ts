@@ -24,6 +24,13 @@ dbConnect();
 const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
+app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('[CORS ERROR]', err);
+  res.status(500).send('CORS Configuration Error');
+});
+
+app.options('*', cors(corsOptions));
+
 app.use(cookieParser());
 
 // const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
@@ -73,58 +80,53 @@ app.use(cookieParser());
 // // Use the middleware
 // app.use(setCorsHeaders);
 
-app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('[CORS ERROR]', err);
-  res.status(500).send('CORS Configuration Error');
-});
+// const logRequests = (req: Request, res: Response, next: NextFunction) => {
+//   const { headers, method, url } = req;
+//   const startTime = Date.now();
 
-app.options('*', cors(corsOptions));
+//   // Log request details when it starts
+//   console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
 
-const logRequests = (req: Request, res: Response, next: NextFunction) => {
-  const { headers, method, url } = req;
-  const startTime = Date.now();
+//   console.log('CORS Options Credentials: ', corsOptions.credentials);
+//   console.log('Response Headers Before Sending:', JSON.stringify(res.getHeaders()));
 
-  // Log request details when it starts
-  console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
+//   // Log response details when it finishes
+//   res.on('finish', () => {
+//     const duration = Date.now() - startTime;
+//     console.log('Response Headers After Sending:', JSON.stringify(res.getHeaders()));
+//     console.log(`[${new Date().toISOString()}] ${method} ${url} ${res.statusCode} - ${duration}ms`);
+//   });
 
-  console.log('CORS Options Credentials: ', corsOptions.credentials);
-  console.log('Response Headers Before Sending:', JSON.stringify(res.getHeaders()));
+//   next();
+// };
 
-  // Log response details when it finishes
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    console.log('Response Headers After Sending:', JSON.stringify(res.getHeaders()));
-    console.log(`[${new Date().toISOString()}] ${method} ${url} ${res.statusCode} - ${duration}ms`);
-  });
-
-  next();
-};
-
-// Use the middleware in your app
-app.use(logRequests);
-
-console.log('env ', process.env.NODE_ENV);
+// // Use the middleware in your app
+// app.use(logRequests);
 
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).send('Natalius API is active');
+app.post('/api/auth/register', (req, res) => {
+  res.json({ message: 'Registration successful' });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/tokens', tokenRoutes);
+// app.get('/', (req: Request, res: Response) => {
+//   res.status(200).send('Natalius API is active');
+// });
 
-app.use(verifyJWT);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/profiles', profileRoutes);
-app.use('/api/clubs', clubRoutes);
-app.use('/api/shifts', shiftRoutes);
-app.use('/api/income', incomeRoutes);
-app.use('/api/vendors', vendorRouters);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/sprints', sprintRoutes);
-app.use('/api/images', imageRoutes);
+// app.use('/api/auth', authRoutes);
+// app.use('/api/tokens', tokenRoutes);
+
+// app.use(verifyJWT);
+// app.use('/api/dashboard', dashboardRoutes);
+// app.use('/api/profiles', profileRoutes);
+// app.use('/api/clubs', clubRoutes);
+// app.use('/api/shifts', shiftRoutes);
+// app.use('/api/income', incomeRoutes);
+// app.use('/api/vendors', vendorRouters);
+// app.use('/api/expenses', expenseRoutes);
+// app.use('/api/sprints', sprintRoutes);
+// app.use('/api/images', imageRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((error: any, req: Request, res: Response, next: NextFunction): void => {
