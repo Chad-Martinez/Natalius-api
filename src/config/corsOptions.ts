@@ -11,20 +11,25 @@ export const corsOptions: CorsOptions = {
       callback(new HttpErrorResponse(400, 'Not allowed by CORS'));
     }
   },
-  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Authorization',
-    'Content-Type',
-    'Origin',
-    'Accept',
-    'X-Requested-With',
-    'Access-Control-Request-Method',
-    'Access-Control-Request-Headers',
-    'Access-Control-Allow-Origin',
-  ],
-  optionsSuccessStatus: 200,
-  exposedHeaders: ['Set-Cookie'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'Origin', 'Accept', 'X-Requested-With'],
+  credentials: true, // Allows cookies
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  // credentials: true,
+  // methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  // allowedHeaders: [
+  //   'Authorization',
+  //   'Content-Type',
+  //   'Origin',
+  //   'Accept',
+  //   'X-Requested-With',
+  //   'Access-Control-Request-Method',
+  //   'Access-Control-Request-Headers',
+  //   'Access-Control-Allow-Origin',
+  // ],
+  // optionsSuccessStatus: 200,
+  // exposedHeaders: ['Set-Cookie'],
 };
 
 // import { CorsOptions } from 'cors';
