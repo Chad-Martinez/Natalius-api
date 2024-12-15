@@ -83,6 +83,8 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+    console.log('Options Response - ', JSON.stringify(res.getHeaders()));
     return res.status(204).end(); // No Content for preflight
   }
 
