@@ -4,4 +4,5 @@ export const allowedOrigins: Array<string> = [
   'http://127.0.0.1',
   'http://10.0.0.194:3000',
   'https://natalius-ui.onrender.com',
+  'https://natalius.netlify.app',
 ];
