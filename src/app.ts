@@ -17,6 +17,7 @@ import sprintRoutes from './routes/sprintRoutes';
 import imageRoutes from './routes/imageRoutes';
 import cors from 'cors';
 import { corsOptions } from './config/corsOptions';
+import { allowedOrigins } from './config/allowedOrigins';
 
 dbConnect();
 
@@ -24,9 +25,20 @@ const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
 app.use(cookieParser());
-app.use(cors(corsOptions));
 
 const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void | Response => {
+  const origin = req.headers.origin;
+
+  if (!origin) {
+    return next();
+  }
+
+  if (!allowedOrigins.includes(origin)) {
+    console.warn('Blocked origin:', origin);
+    return res.status(403).json({ message: 'CORS policy does not allow access from this origin' });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
   // Allow credentials
   res.header('Access-Control-Allow-Credentials', 'true');
 
@@ -44,7 +56,7 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
 
   // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   return next();
@@ -52,6 +64,11 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
 
 // Use the middleware
 app.use(setCorsHeaders);
+
+app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('[CORS ERROR]', err);
+  res.status(500).send('CORS Configuration Error');
+});
 
 const logRequests = (req: Request, res: Response, next: NextFunction) => {
   const { headers, method, url } = req;
