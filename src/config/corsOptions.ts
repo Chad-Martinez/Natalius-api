@@ -12,19 +12,19 @@ export const corsOptions: CorsOptions = {
     }
   },
   credentials: true,
-  // methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  // allowedHeaders: [
-  //   'Authorization',
-  //   'Content-Type',
-  //   'Origin',
-  //   'Accept',
-  //   'X-Requested-With',
-  //   'Access-Control-Request-Method',
-  //   'Access-Control-Request-Headers',
-  //   'Access-Control-Allow-Origin',
-  // ],
-  // optionsSuccessStatus: 200,
-  // exposedHeaders: ['Set-Cookie'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Authorization',
+    'Content-Type',
+    'Origin',
+    'Accept',
+    'X-Requested-With',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+    'Access-Control-Allow-Origin',
+  ],
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['Set-Cookie'],
 };
 
 // import { CorsOptions } from 'cors';
