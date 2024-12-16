@@ -111,15 +111,6 @@ app.use(setCorsHeaders);
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
-app.post('/api/auth/register', (req, res) => {
-  console.log('auth route ', JSON.stringify(res.getHeaders()));
-  res.json({ message: 'Registration successful' });
-});
-
-// app.get('/', (req: Request, res: Response) => {
-//   res.status(200).send('Natalius API is active');
-// });
-
 app.use('/api/auth', authRoutes);
 app.use('/api/tokens', tokenRoutes);
 
