@@ -219,8 +219,8 @@ export const getYtdExpenseWidgetData = async (userId: string): Promise<number> =
     },
   ]).exec();
 
-  const totalExpenses = ytdExpenses[0].total || 0;
-  const totalShiftExpenses = ytdShiftExpenses[0].total || 0;
+  const totalExpenses = ytdExpenses[0] ? ytdExpenses[0].total : 0;
+  const totalShiftExpenses = ytdShiftExpenses[0] ? ytdShiftExpenses[0].total : 0;
 
   return totalExpenses + totalShiftExpenses;
 };
