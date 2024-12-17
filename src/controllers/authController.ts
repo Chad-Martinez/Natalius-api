@@ -61,6 +61,8 @@ export const register: RequestHandler = async (req: Request, res: Response, next
 
     transporter.use('compile', hbs(options));
 
+    const { origin } = req.headers;
+
     const mail = {
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -68,7 +70,7 @@ export const register: RequestHandler = async (req: Request, res: Response, next
       template: 'template',
       context: {
         name: `${stageName}`,
-        link: `${process.env.WEBSITE_URL}/verify/${token}`,
+        link: `${origin ? origin : process.env.WEBSITE_URL}/verify/${token}`,
       },
     };
 
