@@ -9,7 +9,7 @@ import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 export const getUserInfo: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req;
-    const user: HydratedDocument<IUser> | null = await User.findById(userId, { firstName: 1, lastName: 1, email: 1 });
+    const user: HydratedDocument<IUser> | null = await User.findById(userId, { stageName: 1, email: 1 });
 
     if (!user) throw new HttpErrorResponse(404, 'Requested resource not found');
 
