@@ -3,13 +3,9 @@ import { IUser } from '../interfaces/User.interface';
 
 const userScheama = new Schema<IUser>(
   {
-    firstName: {
+    stageName: {
       type: String,
-      required: [true, 'First name required'],
-    },
-    lastName: {
-      type: String,
-      required: [true, 'Last name required'],
+      required: [true, 'Stage name required'],
     },
     email: {
       type: String,

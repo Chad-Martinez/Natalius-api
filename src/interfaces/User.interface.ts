@@ -1,8 +1,7 @@
 export interface IUser {
   email: string;
   hashedPw: string;
-  firstName: string;
-  lastName: string;
+  stageName: string;
   isEmailVerified?: boolean;
   refreshTokens: Array<String>;
 }

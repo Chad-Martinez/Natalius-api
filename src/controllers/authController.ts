@@ -12,7 +12,7 @@ import { HydratedDocument } from 'mongoose';
 import { IEmailToken } from 'src/interfaces/EmailToken.interface';
 
 export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { firstName, lastName, email, password } = req.body;
+  const { stageName, email, password } = req.body;
   try {
     const isExistingUser: HydratedDocument<IUser> | null = await User.findOne({ email: email });
 
@@ -21,9 +21,7 @@ export const register: RequestHandler = async (req: Request, res: Response, next
     const hashedPw: string = await new Promise((resolve, reject) => bcrypt.hash(password, 10, (err, hash) => (err ? reject(err) : resolve(hash))));
 
     const user = new User({
-      firstName,
-      lastName,
-      email,
+      ...req.body,
       hashedPw,
     });
 
@@ -71,7 +69,7 @@ export const register: RequestHandler = async (req: Request, res: Response, next
       subject: 'Welcome to Natalius - Please verify your email address',
       template: 'template',
       context: {
-        name: `${firstName} ${lastName}`,
+        name: `${stageName}`,
         link: `${origin ? origin : process.env.WEBSITE_URL}/verify/${token}`,
       },
     };
@@ -227,7 +225,7 @@ export const passwordResetEmail: RequestHandler = async (req: Request, res: Resp
       subject: 'Natalius - Password Reset Request',
       template: 'passwordReset',
       context: {
-        name: `${user.firstName} ${user.lastName}`,
+        name: `${user.stageName}`,
         link: `${process.env.WEBSITE_URL}/password-reset/${token}`,
       },
     };
