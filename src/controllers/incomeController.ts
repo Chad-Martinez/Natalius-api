@@ -459,6 +459,7 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
           $gte: getStartOfYear(),
           $lte: getEndOfYear(),
         },
+        shiftComplete: true,
       },
     },
     {
@@ -603,7 +604,7 @@ export const perdictNextShiftIncome = async (
     },
   ]).exec();
 
-  const prediction = result[0].predictedIncomeNextShift;
+  const prediction = result[0] && result[0].predictedIncomeNextShift;
 
   return { prediction, nextShift: { start: nextShift.start, timezone: nextShift.timezone } };
 };
