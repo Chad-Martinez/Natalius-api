@@ -5,6 +5,7 @@ import { getUpcomingShiftWidgetData } from './shiftController';
 import { getYtdIncomeWidgetData, perdictNextShiftIncome } from './incomeController';
 import { getYtdExpenseWidgetData } from './expenseController';
 import { getSprintWidgetData } from './sprintController';
+import { getYtdMilage } from './milageController';
 
 export const getDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -16,8 +17,9 @@ export const getDashboardData = async (req: ICustomRequest, res: Response, next:
     const ytdExpenses = await getYtdExpenseWidgetData(userId);
     const sprint = await getSprintWidgetData(userId);
     const shiftPrediction = await perdictNextShiftIncome(userId);
+    const ytdMilage = await getYtdMilage(userId);
 
-    res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses, shiftPrediction });
+    res.status(200).json({ sprint, upcomingShifts, ytdIncome, ytdExpenses, shiftPrediction, ytdMilage });
   } catch (error) {
     console.error('Dashboard Controller Error: ', error);
     next(error);

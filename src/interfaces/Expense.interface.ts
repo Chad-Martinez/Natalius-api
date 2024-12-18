@@ -7,5 +7,6 @@ export interface IExpense {
   amount: Number;
   type: EnumType;
   notes: String;
+  milage: Number;
   userId: Types.ObjectId;
 }

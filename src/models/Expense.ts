@@ -23,6 +23,7 @@ const expenseSchema = new Schema<IExpense>(
       required: [true, 'Expense type is required'],
       uppercase: true,
     },
+    milage: { type: Number, default: 0 },
     notes: String,
     userId: { type: Schema.Types.ObjectId, required: true },
   },
