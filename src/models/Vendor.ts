@@ -9,11 +9,13 @@ const vendorSchema = new Schema<IVendor>(
     },
     defaultType: {
       type: String,
-      enum: ['SERVICE', 'EQUIPMENT', 'MISC'],
+      enum: ['SERVICE', 'EQUIPMENT', 'MISC', ''],
     },
-    distance: {
+    milage: {
       type: Number,
+      default: 0,
     },
+    useDefaults: { type: Boolean, default: false },
     notes: String,
     userId: { type: Schema.Types.ObjectId, required: true },
   },

@@ -9,7 +9,7 @@ import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import Account from '../models/Account';
 import { HydratedDocument } from 'mongoose';
-import { IEmailToken } from 'src/interfaces/EmailToken.interface';
+import { IEmailToken } from '../interfaces/EmailToken.interface';
 
 export const register: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { stageName, email, password } = req.body;

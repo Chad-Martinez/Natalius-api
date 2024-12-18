@@ -124,7 +124,7 @@ export const getClubsByUser = async (req: ICustomRequest, res: Response, next: N
           contact: 1,
           defaults: 1,
           shifts: 1,
-          distance: 1,
+          milage: 1,
           isArchived: 1,
           userId: 1,
           created_at: 1,
