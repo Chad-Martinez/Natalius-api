@@ -179,7 +179,7 @@ export const getIncomeGraphData = async (userId: string) => {
     {
       $group: {
         _id: null,
-        week: { $push: { day: '$day', income: '$income' } }, // Create a `week` array
+        week: { $push: { day: '$day', income: '$income' } },
       },
     },
     {

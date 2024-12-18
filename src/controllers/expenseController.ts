@@ -100,6 +100,8 @@ export const getPaginatedExpenses: RequestHandler = async (req: ICustomRequest, 
           amount: 1,
           type: 1,
           notes: 1,
+          milage: 1,
+          vendorId: '$vendorDetails._id',
           vendor: '$vendorDetails.name',
           sourceType: { $literal: 'expense' },
         },
@@ -1039,22 +1041,16 @@ export const getExpenseById: RequestHandler = async (req: Request, res: Response
 
 export const addExpense: RequestHandler = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { vendorId, date, amount, type, notes } = req.body;
-
     const { userId } = req;
 
     const expense = new Expense({
-      vendorId,
-      date,
-      amount,
-      type,
-      notes,
+      ...req.body,
       userId,
     });
 
     await expense.save();
 
-    res.status(201).json({ _id: expense._id });
+    res.status(201).json(expense);
   } catch (error) {
     console.error('Expense Controller Error - AddExpense: ', error);
     if (error.name === 'ValidationError') {

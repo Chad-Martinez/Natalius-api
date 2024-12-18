@@ -39,20 +39,15 @@ export const getVendorById = async (req: Request, res: Response, next: NextFunct
 
 export const addVendor = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, defaultType, distance, notes } = req.body;
-
     const { userId } = req;
 
     const vendor = new Vendor({
-      name,
+      ...req.body,
       userId,
-      defaultType,
-      distance,
-      notes,
     });
     await vendor.save();
 
-    res.status(201).json({ _id: vendor._id });
+    res.status(201).json(vendor);
   } catch (error) {
     console.error('Vendor Controller Error - AddVendor: ', error);
     if (error.name === 'ValidationError') {

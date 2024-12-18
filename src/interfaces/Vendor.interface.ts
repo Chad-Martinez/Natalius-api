@@ -4,7 +4,8 @@ import { EnumType } from 'typescript';
 export interface IVendor {
   name: string;
   defaultType: EnumType;
-  distance: number;
+  milage: number;
+  useDefaults: boolean;
   notes?: number;
   userId: Types.ObjectId;
 }

@@ -6,7 +6,6 @@ import { getStartOfYear } from '../helpers/date-time-helpers';
 
 export const getYtdMilage = async (userId: string) => {
   try {
-    console.log('id ', userId);
     const shiftMilage = await Shift.aggregate([
       {
         $match: {

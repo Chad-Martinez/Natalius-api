@@ -19,11 +19,11 @@ export interface IClub extends Document {
     pricePerDance?: Number;
     tips?: Number;
     other?: Number;
-    distance?: Number;
+    milage?: Number;
     timezone: String;
   };
   shifts: (Types.ObjectId | IShift)[] | null;
-  distance: Number;
+  milage: Number;
   userId: Types.ObjectId;
   isArchived: boolean;
 }
