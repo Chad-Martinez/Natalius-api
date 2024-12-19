@@ -63,12 +63,6 @@ export const register: RequestHandler = async (req: Request, res: Response, next
 
     const { origin } = req.headers;
 
-    const link = `${origin ? origin : process.env.WEBSITE_URL}/verify/${token}`;
-
-    console.log('link: ', link);
-
-    console.log('req ', req);
-
     const mail = {
       from: process.env.SENDER_EMAIL,
       to: email,
