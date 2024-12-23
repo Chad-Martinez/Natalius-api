@@ -39,12 +39,12 @@ export const getWeeksInMonth = (startOfMonth: Date, endOfMonth: Date, data: Week
   return mappedWeeks;
 };
 
-export const fillMissingMonths = (data: MappedData[]): MappedData[] => {
+export const fillMissingPeriods = (data: MappedData[], rangePeriod: string[]): MappedData[] => {
   const dataMap = new Map(data.map((item) => [item.label, item.income]));
 
-  const filledData = MONTHS_OF_YEAR.map((month) => ({
-    label: month,
-    income: dataMap.get(month) || 0,
+  const filledData = rangePeriod.map((period) => ({
+    label: period,
+    income: dataMap.get(period) || 0,
   }));
 
   return filledData;
