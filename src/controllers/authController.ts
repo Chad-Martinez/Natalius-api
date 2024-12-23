@@ -219,6 +219,8 @@ export const passwordResetEmail: RequestHandler = async (req: Request, res: Resp
 
     transporter.use('compile', hbs(options));
 
+    const { origin } = req.headers;
+
     const mail = {
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -226,7 +228,7 @@ export const passwordResetEmail: RequestHandler = async (req: Request, res: Resp
       template: 'passwordReset',
       context: {
         name: `${user.stageName}`,
-        link: `${process.env.WEBSITE_URL}/password-reset/${token}`,
+        link: `${origin ? origin : process.env.WEBSITE_URL}/password-reset/${token}`,
       },
     };
 
