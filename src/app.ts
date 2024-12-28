@@ -15,8 +15,6 @@ import expenseRoutes from './routes/expenseRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import sprintRoutes from './routes/sprintRoutes';
 import imageRoutes from './routes/imageRoutes';
-import cors from 'cors';
-// import { corsOptions } from './config/corsOptions';
 import { allowedOrigins } from './config/allowedOrigins';
 
 dbConnect();
@@ -25,23 +23,6 @@ const app: Express = express();
 const port = parseInt(process.env.PORT || '5050', 10);
 
 console.log('env ', process.env.NODE_ENV);
-
-// app.use(cors(corsOptions), (err: Error, req: Request, res: Response, next: NextFunction) => {
-//   console.error('[CORS ERROR]', err);
-//   res.status(500).send('CORS Configuration Error');
-// });
-
-// app.options('*', cors(corsOptions));
-
-// app.options('*', (req, res) => {
-//   console.log('OPTIONS request received:', req.headers.origin);
-//   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-//   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
-//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-//   res.header('Access-Control-Allow-Credentials', 'true');
-//   console.log('response headers ', JSON.stringify(res.getHeaders()));
-//   res.status(204).end(); // No Content for preflight
-// });
 
 app.use(cookieParser());
 
@@ -58,55 +39,26 @@ const setCorsHeaders = (req: Request, res: Response, next: NextFunction): void |
   }
 
   res.setHeader('Access-Control-Allow-Origin', origin);
-  // Allow credentials
+
   res.header('Access-Control-Allow-Credentials', 'true');
 
-  // Allow Methods
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
   res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Origin, Accept, X-Requested-With');
 
-  // Expose Headers
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
 
   if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request for:', req.headers.origin);
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, content-type, Origin, Accept, X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-
-    console.log('Options Response - ', JSON.stringify(res.getHeaders()));
-    return res.status(204).end(); // No Content for preflight
+    return res.status(204).end();
   }
 
   return next();
 };
 
-// // Use the middleware
 app.use(setCorsHeaders);
-
-// const logRequests = (req: Request, res: Response, next: NextFunction) => {
-//   const { headers, method, url } = req;
-//   const startTime = Date.now();
-
-//   // Log request details when it starts
-//   console.log(`[${new Date().toISOString()}] ${method} ${url} ${JSON.stringify(headers)}`);
-
-//   console.log('CORS Options Credentials: ', corsOptions.credentials);
-//   console.log('Response Headers Before Sending:', JSON.stringify(res.getHeaders()));
-
-//   // Log response details when it finishes
-//   res.on('finish', () => {
-//     const duration = Date.now() - startTime;
-//     console.log('Response Headers After Sending:', JSON.stringify(res.getHeaders()));
-//     console.log(`[${new Date().toISOString()}] ${method} ${url} ${res.statusCode} - ${duration}ms`);
-//   });
-
-//   next();
-// };
-
-// // Use the middleware in your app
-// app.use(logRequests);
 
 app.use(json());
 app.use(urlencoded({ extended: true }));
