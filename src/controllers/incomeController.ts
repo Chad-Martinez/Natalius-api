@@ -322,7 +322,7 @@ export const getIncomeGraphData = async (userId: string) => {
 
     return { ...ytdGraphData, defaultDataSet };
   } catch (error) {
-    console.log('Income Controller Error - getIncomeGraphData: ', error);
+    console.error('Income Controller Error - getIncomeGraphData: ', error);
     return {};
   }
 };
@@ -408,11 +408,9 @@ export const getIncomeAverageWidgetData = async (userId: string): Promise<Income
       },
     ]);
 
-    console.log;
-
     return result[0];
   } catch (error) {
-    console.log('Error in getIncomeAverageWidgetData', error);
+    console.error('Error in getIncomeAverageWidgetData', error);
     return {} as IncomeAverages;
   }
 };
