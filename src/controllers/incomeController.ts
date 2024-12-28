@@ -431,7 +431,7 @@ export const perdictNextShiftIncome = async (
     return null;
   }
 
-  const dayOfWeek = dayjs.utc(nextShift.start).day() + 1;
+  const dayOfWeek = dayjs.utc(nextShift.start).day();
 
   const result = await Shift.aggregate([
     {
