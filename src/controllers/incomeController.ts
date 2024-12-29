@@ -5,6 +5,7 @@ import { ICustomRequest } from '../interfaces/CustomeRequest.interface';
 import Shift from '../models/Shift';
 import { ISprint } from '../interfaces/Sprint.interface';
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import isBetween from 'dayjs/plugin/isBetween';
 import { getSprintWidgetData } from './sprintController';
 import { IncomeAverages } from '../types/income-types';
@@ -24,6 +25,7 @@ import {
 import { IShift } from '../interfaces/Shift.interface';
 import { fillMissingPeriods, findFirstNonZeroIncomeProperty, getWeeksInMonth } from '../helpers/graph-helpers';
 dayjs.extend(isBetween);
+dayjs.extend(timezone);
 
 export const getIncomeDashboardData = async (req: ICustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -429,7 +431,10 @@ export const perdictNextShiftIncome = async (
     return null;
   }
 
-  const dayOfWeek = dayjs.utc(nextShift.start).day();
+  const nextShiftLocalDay =
+    dayjs(nextShift.start)
+      .tz(nextShift.timezone as string)
+      .day() + 1;
 
   const result = await Shift.aggregate([
     {
@@ -441,12 +446,17 @@ export const perdictNextShiftIncome = async (
     {
       $project: {
         incomeAmount: '$income.amount',
-        dayOfWeek: { $dayOfWeek: '$start' },
+        dayOfWeek: {
+          $dayOfWeek: {
+            date: '$start',
+            timezone: nextShift.timezone,
+          },
+        },
       },
     },
     {
       $match: {
-        dayOfWeek: dayOfWeek,
+        dayOfWeek: nextShiftLocalDay,
       },
     },
     { $sort: { incomeAmount: 1 } },
