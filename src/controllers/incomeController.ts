@@ -14,6 +14,7 @@ import {
   getEndOfQuarter,
   getEndOfWeek,
   getEndOfYear,
+  getQuarterMonths,
   getStartOfDay,
   getStartOfMonth,
   getStartOfQuarter,
@@ -281,7 +282,7 @@ export const getIncomeGraphData = async (userId: string) => {
       },
     ]);
 
-    const formatQuarterData = fillMissingPeriods(quarterIncomeGraphData, MONTHS_OF_YEAR);
+    const formatQuarterData = fillMissingPeriods(quarterIncomeGraphData, getQuarterMonths());
 
     const yearIncomeGraphData = await Shift.aggregate([
       {
@@ -314,7 +315,7 @@ export const getIncomeGraphData = async (userId: string) => {
     const ytdGraphData = {
       week: weekIncomeGraphData[0]?.week ? weekIncomeGraphData[0].week : [],
       month: formatMonthData,
-      quarter: quarterIncomeGraphData,
+      quarter: formatQuarterData,
       year: formatYearData,
     };
 

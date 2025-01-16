@@ -21,3 +21,5 @@ export const getEndOfQuarter = (): Date => new Date(dayjs.utc().add(1, 'quarter'
 export const getStartOfYear = (): Date => new Date(dayjs.utc().startOf('year').format());
 
 export const getEndOfYear = (): Date => new Date(dayjs.utc().add(1, 'year').startOf('year').format());
+
+export const getQuarterMonths = () => MONTHS_OF_YEAR.slice((dayjs().quarter() - 1) * 3, (dayjs().quarter() - 1) * 3 + 3);
